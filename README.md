@@ -1,33 +1,39 @@
 ﻿# Powerbuilding PPL 일지
 
-주 6회 Push/Pull/Legs 파워빌딩 **날짜별 트레이닝 일지**. 단일 `index.html` + Supabase(본인 데이터만) 백엔드. GitHub Pages 정적 호스팅.
+주 6회 Push/Pull/Legs 파워빌딩 **날짜별 트레이닝 일지**. 단일 `index.html` + **Firebase**(Auth + Firestore, 본인 데이터만) 백엔드. GitHub Pages 정적 호스팅. 서버·빌드 없음.
 
 **라이브:** https://nisloke.github.io/powerbuilding-ppl/
 
-## 즉시 사용 (4단계)
+## 즉시 사용 (Firebase 설정)
 
-1. **DB 생성** — Supabase 프로젝트의 **SQL Editor**에 [`schema.sql`](./schema.sql) 전체를 붙여넣고 **Run**. (테이블·RLS·권한 자동 생성, 재실행 안전)
-2. **가입 즉시 사용** — Supabase → **Authentication → Sign In / Providers → Email** 에서 **“Confirm email” 끄기** (메일 확인 없이 바로 로그인).
-3. **키 확인** — Supabase → **Project Settings → API** 에서 `Project URL` 과 `anon public` 키 복사.
-4. **앱 열기** — 위 라이브 URL 접속 → 최초 1회 URL·anon 키 붙여넣기 → **회원가입**(페코·뭉이 각자) → 끝. 두 폰에서 각자 로그인하면 본인 기록만 보입니다.
+1. **프로젝트 생성** — https://console.firebase.google.com → **프로젝트 추가**. (Google Analytics는 꺼도 됨)
+2. **웹 앱 등록** — 프로젝트 개요 → `</>` (웹) 추가 → 앱 닉네임 입력 → 표시되는 **`firebaseConfig` 객체 복사**.
+3. **Authentication** → 시작하기 → **Email/Password** 공급자 **사용 설정**.
+4. **Firestore Database** → 데이터베이스 만들기 → 위치 `asia-northeast3 (Seoul)` → **프로덕션 모드**로 생성 → **규칙(Rules)** 탭에 [`firestore.rules`](./firestore.rules) 내용 붙여넣고 **게시**.
+5. **승인 도메인** — Authentication → Settings → **Authorized domains** 에 `nisloke.github.io` 추가.
+6. **계정 2개 생성** — Authentication → Users → **Add user** 로 페코·뭉이 이메일/비번 등록. (또는 앱에서 회원가입)
+7. **config 적용** — 2번에서 복사한 config를 `index.html` 상단 `FB_CONFIG`에 넣고 푸시. (비워두면 앱 첫 화면에서 직접 붙여넣기 가능)
 
-> `anon public` 키는 공개돼도 안전합니다. 데이터 보호는 **RLS**(본인 행만)가 담당하며, `service_role` 키는 절대 클라이언트에 넣지 않습니다.
+> `apiKey` 등 Firebase config는 클라이언트에 노출되도록 설계된 **공개 값**이라 코드/공개 리포에 들어가도 안전합니다. 데이터 보호는 **Firestore 보안 규칙**(본인 `users/{uid}`만)이 담당합니다. 관리자(Admin) 키는 절대 클라이언트에 넣지 않습니다.
 
-## 기록되는 내용 (날짜별)
+## 데이터 모델 (Firestore)
 
-- **세션:** 날짜 · 운동(P/P/L) · 주차(S/H) · 숙련도 · 컨디션(😣😐😀) · 메모 · 체중 · 수면 · 디로드 표시
-- **종목별:** 무게 · 반복 · RIR · 종목 메모 · (A/B 선택 시) 실제 변형
-- **자동 계산:** e1RM(고반복 12회 캡 추정) · 종목별 최고기록 · 날짜별 히스토리
+```
+users/{uid}/sessions/{YYYY-MM-DD_dayType}
+  { date, dayType, week_block, level_mode, condition, memo,
+    bodyweight_kg, sleep_hours, is_deload, updatedAt,
+    entries: { "push-0": {w,r,rir,note,name}, ... } }
+```
+
+- **세션 = 날짜+운동 1문서**, 종목 기록은 그 문서의 `entries` 맵에 임베드(하루치 1읽기/1쓰기).
+- **본인 데이터만**: 로그인 신원(`uid`)으로 격리 — RLS 대신 Firestore 보안 규칙.
+- e1RM·최고기록(PR)·추세는 저장하지 않고 행을 읽어 **클라이언트에서 계산**(고반복 12회 캡).
 
 ## 특징
 
-- **오프라인 우선:** 로컬 캐시 먼저 렌더 → 온라인 시 동기화. 헬스장 와이파이가 끊겨도 입력 가능(재접속 시 자동 전송).
-- **정직한 저장 상태:** 저장됨 / 오프라인 저장됨 / 저장 실패 구분.
-- **벽시계 기반 휴식 타이머** + 알림음/진동(백그라운드 드리프트 없음).
-
-## 설정값을 코드에 고정하려면(선택)
-
-`index.html` 상단 `HARDCODED` 에 `url`·`anonKey`를 넣으면 최초 설정 화면을 건너뜁니다.
+- **오프라인 우선**: Firestore 영구 캐시(IndexedDB)로 오프라인 읽기/쓰기 → 재접속 시 자동 동기화. 헬스장 신호가 약해도 입력 가능.
+- **세션 유지**: Firebase Auth가 토큰을 자동 갱신·영속화 → 한 번 로그인하면 계속 유지.
+- **벽시계 기반 휴식 타이머** + 알림음/진동.
 
 ## 배포 갱신
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="파워빌딩 PPL 주 6회 트레이닝 일지 — 날짜별 기록·메모·e1RM 추세, Supabase 동기화">
+<meta name="description" content="파워빌딩 PPL 주 6회 트레이닝 일지 — 날짜별 기록·메모·e1RM 추세, 클라우드 동기화">
 <meta name="theme-color" content="#121418">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -258,16 +258,23 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
 /* ============================================================
-   설정: 아래 두 값을 채우면 설정 화면을 건너뜁니다(선택).
-   비워두면 첫 실행 시 브라우저에서 직접 입력합니다.
-   둘 다 공개해도 안전한 값입니다(보안은 RLS가 담당).
+   설정: 아래 FB_CONFIG에 Firebase 웹 앱 config 객체를 넣으면 설정 화면을 건너뜁니다.
+   비워두면(null) 첫 실행 시 브라우저에서 붙여넣습니다.
+   apiKey 등은 모두 공개돼도 안전합니다(보안은 Firestore 보안 규칙이 담당).
    ============================================================ */
-const HARDCODED = {
-  url:'https://gfhabguqsrxsezmdnrin.supabase.co',
-  anonKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmaGFiZ3Vxc3J4c2V6bWRucmluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1NzQ3MDksImV4cCI6MjA5NzE1MDcwOX0.7DbyDydalRjb_7KtJ6U9rtPZtTsX0P-VfelTaek8CRY'
+const FB_CONFIG = {
+  apiKey: "AIzaSyAcl2LDdOORGL1i0x56E7Da9H0D-kjKJ4g",
+  authDomain: "powerbuilding-ppl.firebaseapp.com",
+  projectId: "powerbuilding-ppl",
+  storageBucket: "powerbuilding-ppl.firebasestorage.app",
+  messagingSenderId: "75068858993",
+  appId: "1:75068858993:web:6e2b42f8e87904252ff1d0"
 };
 
 /* ---------- 유틸 ---------- */
@@ -275,8 +282,8 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const numOrNull = v => { const n=parseFloat(v); return isFinite(n)?n:null; };
 const intOrNull = v => { const n=parseInt(v,10); return isFinite(n)?n:null; };
-const CFG_KEY='pb-cfg';
-function getCfg(){ if(HARDCODED.url&&HARDCODED.anonKey) return {url:HARDCODED.url.trim(),key:HARDCODED.anonKey.trim()};
+const CFG_KEY='pb-fbcfg';
+function getCfg(){ if(FB_CONFIG && FB_CONFIG.apiKey) return FB_CONFIG;
   try{ return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); }catch(e){ return null; } }
 function kstToday(){ const d=new Date(Date.now()+9*3600*1000); return d.toISOString().slice(0,10); }
 function weekdayKr(iso){ const wd=['일','월','화','수','목','금','토']; const d=new Date(iso+'T00:00:00+09:00'); return wd[d.getDay()]; }
@@ -327,25 +334,24 @@ const WARMUP_NOTE={
   legs:'고관절·햄스트링·발목 — 둔근·대퇴사두를 수축해 굴곡근·햄스트링을 이완'};
 
 /* ---------- 상태 ---------- */
-let sb=null, USER=null, built=false, online=navigator.onLine;
-let store={}, sessionMeta={}, bestMap={}, sessIds={};
+let app=null, auth=null, db=null, USER=null, built=false, online=navigator.onLine;
+let store={}, sessionMeta={}, bestMap={};
 let active='push', dayType='push', date=kstToday();
 let week='S', level='adv';
-const OUTBOX='pb-outbox';
-function uid(){ return USER ? USER.id : 'anon'; }
+function uid(){ return USER ? USER.uid : 'anon'; }
 function lk(name){ return 'pb-'+name+'-'+uid(); }
 
 /* ---------- 부트 ---------- */
 function boot(){
   const cfg=getCfg();
-  if(!cfg || !cfg.url || !cfg.key){ renderConfig(); return; }
-  if(typeof supabase==='undefined'){ renderFatal('Supabase 라이브러리를 불러오지 못했습니다. 네트워크 연결을 확인하고 새로고침하세요.'); return; }
-  try{ sb=supabase.createClient(cfg.url, cfg.key, {auth:{persistSession:true, autoRefreshToken:true}}); }
-  catch(e){ renderFatal('설정값이 올바르지 않습니다: '+esc(e.message)+'. 설정을 다시 입력하세요.'); return; }
-  sb.auth.onAuthStateChange((_ev, session)=>{ USER=session?session.user:null; if(USER) showApp(); else renderAuth(); });
-  sb.auth.getSession().then(({data})=>{ USER=data.session?data.session.user:null; if(USER) showApp(); else renderAuth(); })
-    .catch(()=>renderAuth());
-  window.addEventListener('online', ()=>{ online=true; setSync(); drain(); });
+  if(!cfg || !cfg.apiKey){ renderConfig(); return; }
+  try{
+    app=initializeApp(cfg);
+    auth=getAuth(app);
+    db=initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+  }catch(e){ renderFatal('Firebase 초기화 실패: '+esc(e.message)+'. 설정을 다시 입력하세요.'); return; }
+  onAuthStateChanged(auth, (user)=>{ USER=user||null; if(USER) showApp(); else renderAuth(); });
+  window.addEventListener('online', ()=>{ online=true; setSync(); });
   window.addEventListener('offline', ()=>{ online=false; setSync(); });
 }
 
@@ -355,17 +361,16 @@ function renderConfig(){
   $('#gcard').innerHTML=`
     <h1>최초 설정</h1>
     <p class="big">PPL <em>일지</em> 연결</p>
-    <p class="h">Supabase 프로젝트 URL과 anon(public) 키를 입력하세요. 두 값 모두 공개돼도 안전합니다(보안은 RLS가 담당).</p>
-    <label class="field"><span>Project URL</span><input id="cfgUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" inputmode="url"></label>
-    <label class="field"><span>anon public key</span><input id="cfgKey" placeholder="eyJhbGciOi..." autocomplete="off"></label>
+    <p class="h">Firebase 웹 앱 config 객체를 붙여넣으세요. (콘솔 → 프로젝트 설정 → 내 앱 → SDK 설정 및 구성) apiKey 등은 공개돼도 안전합니다(보안은 보안 규칙이 담당).</p>
+    <label class="field"><span>Firebase config 객체</span><input id="cfgUrl" placeholder='{ "apiKey":"...", "authDomain":"...", "projectId":"...", "appId":"..." }' autocomplete="off"></label>
     <button class="gbtn" id="cfgSave">저장하고 시작</button>
     <div class="gmsg" id="cfgMsg"></div>`;
   $('#cfgSave').addEventListener('click',()=>{
-    const url=$('#cfgUrl').value.trim(), key=$('#cfgKey').value.trim();
-    const m=$('#cfgMsg');
-    if(!/^https:\/\/.+\.supabase\.co/.test(url)){ m.className='gmsg err'; m.textContent='URL 형식이 올바르지 않습니다 (https://xxxx.supabase.co)'; return; }
-    if(key.length<20){ m.className='gmsg err'; m.textContent='anon 키가 너무 짧습니다. 다시 확인하세요.'; return; }
-    localStorage.setItem(CFG_KEY, JSON.stringify({url,key}));
+    const raw=$('#cfgUrl').value.trim(); const m=$('#cfgMsg');
+    let cfg=null;
+    try{ const t=raw.slice(raw.indexOf('{'), raw.lastIndexOf('}')+1); try{ cfg=JSON.parse(t); }catch(_){ cfg=(0,eval)('('+t+')'); } }catch(e){ cfg=null; }
+    if(!cfg || !cfg.apiKey || !cfg.projectId){ m.className='gmsg err'; m.textContent='config를 인식하지 못했습니다. apiKey·projectId가 포함된 객체를 붙여넣으세요.'; return; }
+    localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
     boot();
   });
 }
@@ -392,22 +397,25 @@ function renderAuth(){
   $('#auLogin').addEventListener('click', async ()=>{
     const {email,password}=getv(); if(!email||!password){ msg.className='gmsg err'; msg.textContent='이메일과 비밀번호를 입력하세요.'; return; }
     msg.className='gmsg'; msg.textContent='로그인 중...';
-    const {error}=await sb.auth.signInWithPassword({email,password});
-    if(error){ msg.className='gmsg err'; msg.textContent=authErr(error.message); }
+    try{ await signInWithEmailAndPassword(auth, email, password); }
+    catch(e){ msg.className='gmsg err'; msg.textContent=authErr(e.code||e.message); }
   });
   $('#auSignup').addEventListener('click', async ()=>{
     const {email,password}=getv(); if(!email||password.length<6){ msg.className='gmsg err'; msg.textContent='이메일과 6자 이상 비밀번호를 입력하세요.'; return; }
     msg.className='gmsg'; msg.textContent='가입 중...';
-    const {data,error}=await sb.auth.signUp({email,password});
-    if(error){ msg.className='gmsg err'; msg.textContent=authErr(error.message); return; }
-    if(data.session){ msg.className='gmsg ok'; msg.textContent='가입 완료!'; }
-    else { msg.className='gmsg ok'; msg.textContent='확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 로그인하세요.'; }
+    try{ await createUserWithEmailAndPassword(auth, email, password); msg.className='gmsg ok'; msg.textContent='가입 완료!'; }
+    catch(e){ msg.className='gmsg err'; msg.textContent=authErr(e.code||e.message); }
   });
 }
 function authErr(m){
-  if(/Invalid login/i.test(m)) return '이메일 또는 비밀번호가 틀렸습니다.';
-  if(/already registered/i.test(m)) return '이미 가입된 이메일입니다. 로그인하세요.';
-  if(/Email not confirmed/i.test(m)) return '이메일 미확인 상태입니다. 메일 확인 또는 Supabase에서 Confirm email을 끄세요.';
+  m=String(m||'');
+  if(/invalid-credential|wrong-password|user-not-found/i.test(m)) return '이메일 또는 비밀번호가 틀렸습니다.';
+  if(/email-already-in-use/i.test(m)) return '이미 가입된 이메일입니다. 로그인하세요.';
+  if(/weak-password/i.test(m)) return '비밀번호가 너무 약합니다(6자 이상).';
+  if(/invalid-email/i.test(m)) return '이메일 형식이 올바르지 않습니다.';
+  if(/network-request-failed/i.test(m)) return '네트워크 오류. 연결을 확인하세요.';
+  if(/operation-not-allowed/i.test(m)) return 'Email/Password 로그인이 꺼져 있습니다(콘솔에서 활성화).';
+  if(/unauthorized-domain/i.test(m)) return '이 도메인이 승인 목록에 없습니다(Authentication→Settings→Authorized domains에 추가).';
   return m;
 }
 
@@ -419,7 +427,6 @@ function showApp(){
   level = localStorage.getItem(lk('level')) || 'adv';
   if(!built){ build(); built=true; }
   setSync();
-  drain();
   go(active && active!=='_' ? active : 'push');
 }
 function setSync(){ const d=$('#syncDot'); if(!d) return; d.className='sync'+(online?'':' off'); d.textContent=online?'● 동기화':'● 오프라인'; }
@@ -435,111 +442,65 @@ function toast(kind){ const el=$('#save'); if(!el) return;
 /* ---------- e1RM (고반복 과대추정 방지: 12회로 캡) ---------- */
 function e1rm(w,r){ w=parseFloat(w); r=parseFloat(r); if(!(w>0)||!(r>0)) return null; if(r<=1) return Math.round(w); return Math.round(w*(1+Math.min(r,12)/30)); }
 
-/* ---------- 로컬 캐시 ---------- */
-function cacheKey(d,dt){ return 'pb-cache-'+uid()+'-'+d+'-'+dt; }
-function writeCache(){ try{ localStorage.setItem(cacheKey(date,dayType), JSON.stringify({store,sessionMeta})); }catch(e){} }
-function readCache(d,dt){ try{ return JSON.parse(localStorage.getItem(cacheKey(d,dt))||'null'); }catch(e){ return null; } }
-
-/* ---------- 아웃박스(오프라인 큐) ---------- */
-function getOutbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX)||'[]'); }catch(e){ return []; } }
-function setOutbox(q){ localStorage.setItem(OUTBOX, JSON.stringify(q)); }
-function enqueue(item){ const q=getOutbox(); q.push(item); setOutbox(q); }
-async function drain(){
-  if(!sb||!USER) return;
-  let q=getOutbox(); if(!q.length) return;
-  const rest=[];
-  for(const it of q){
-    try{
-      const id=await ensureSession(it.date,it.dayType,it.week);
-      if(it.kind==='entry') await sb.from('ppl_entries').upsert({...it.payload, session_id:id, user_id:USER.id},{onConflict:'session_id,exercise_key'}).throwOnError();
-      else await sb.from('ppl_sessions').update(it.patch).eq('id',id).throwOnError();
-    }catch(e){ rest.push(it); }
-  }
-  setOutbox(rest);
-  if(rest.length<q.length) toast('saved');
-}
-
-/* ---------- 세션 보장 ---------- */
-async function ensureSession(d,dt,wk){
-  const k=d+'|'+dt; if(sessIds[k]) return sessIds[k];
-  const {data,error}=await sb.from('ppl_sessions')
-    .upsert({user_id:USER.id, session_date:d, day_type:dt, week_block:wk, level_mode:level},{onConflict:'user_id,session_date,day_type'})
-    .select('id').single();
-  if(error) throw error;
-  sessIds[k]=data.id; return data.id;
-}
+/* ---------- 세션 문서 참조 (users/{uid}/sessions/{date_dayType}) ---------- */
+function sref(d, dt){ return doc(db, 'users', USER.uid, 'sessions', d+'_'+dt); }
 
 /* ---------- 날짜별 로드 ---------- */
 async function loadDay(){
   store={}; sessionMeta={}; bestMap={};
-  const cache=readCache(date,dayType);
-  if(cache){ store=cache.store||{}; sessionMeta=cache.sessionMeta||{}; }
-  render(); // 캐시 우선 렌더
-  if(!sb||!USER){ return; }
+  render();
+  if(!db || !USER) return;
   const dd=date, dt=dayType;
   try{
-    const {data:s,error:se}=await sb.from('ppl_sessions').select('*')
-      .eq('session_date',dd).eq('day_type',dt).maybeSingle();
-    if(se) throw se;
-    let serverStore={};
-    if(s){ sessIds[dd+'|'+dt]=s.id;
-      const {data:ents,error:ee}=await sb.from('ppl_entries').select('*').eq('session_id',s.id);
-      if(ee) throw ee;
-      (ents||[]).forEach(r=>{ serverStore[r.exercise_key]={w:r.weight_kg??'', r:r.reps??'', rir:r.rir??'', note:r.note||'', name:r.exercise_name||''}; });
-    }
-    // 아웃박스(미전송 편집)를 서버 결과 위에 머지 → 빈값 덮어쓰기 방지
-    const pend=getOutbox().filter(it=>it.date===dd&&it.dayType===dt&&it.kind==='entry');
-    pend.forEach(it=>{ const p=it.payload; serverStore[p.exercise_key]={w:p.weight_kg??'', r:p.reps??'', rir:p.rir??'', note:p.note||'', name:p.exercise_name||''}; });
-    if(dd===date && dt===dayType){
-      store=serverStore;
-      sessionMeta = s ? {id:s.id, condition:s.condition, memo:s.memo||'', bodyweight_kg:s.bodyweight_kg, sleep_hours:s.sleep_hours, is_deload:!!s.is_deload} : {};
-      await loadBest(DAYS[dt].ex.map((_,i)=>dt+'-'+i));
-      writeCache(); render();
-    }
-  }catch(e){ /* 오프라인/오류 → 캐시 유지 */ }
+    const snap = await getDoc(sref(dd, dt));
+    if(dd!==date || dt!==dayType) return;
+    if(snap.exists()){
+      const d=snap.data();
+      store = d.entries || {};
+      sessionMeta = { condition:(d.condition??null), memo:(d.memo||''), bodyweight_kg:(d.bodyweight_kg??''), sleep_hours:(d.sleep_hours??''), is_deload:!!d.is_deload };
+    } else { store={}; sessionMeta={}; }
+    render();
+    await loadBest(); refreshBestUI();
+  }catch(e){ /* 오프라인/오류 → 현재 화면 유지(Firestore 캐시) */ }
 }
-async function loadBest(keys){
+async function loadBest(){
+  bestMap={};
+  if(!db || !USER) return;
   try{
-    const {data}=await sb.from('ppl_entries').select('exercise_key,weight_kg,reps').eq('user_id',USER.id).in('exercise_key',keys);
-    const m={}; (data||[]).forEach(r=>{ const e=e1rm(r.weight_kg,r.reps); if(e&&(!m[r.exercise_key]||e>m[r.exercise_key])) m[r.exercise_key]=e; });
+    const qs = await getDocs(query(collection(db,'users',USER.uid,'sessions'), where('dayType','==',dayType)));
+    const m={};
+    qs.forEach(s=>{ const ents=(s.data().entries)||{}; for(const k in ents){ const e=e1rm(ents[k].w, ents[k].r); if(e && (!m[k]||e>m[k])) m[k]=e; } });
     bestMap=m;
   }catch(e){}
 }
 
-/* ---------- 쓰기: 종목 ---------- */
+/* ---------- 쓰기: 종목 (디바운스 → setDoc merge) ---------- */
 const entryTimers={};
-function collectEntry(key){
-  const o=store[key]||{};
-  return { session_date:date, week_block:week, exercise_key:key,
-    weight_kg:numOrNull(o.w), reps:intOrNull(o.r), rir:intOrNull(o.rir),
-    note:(o.note||'').slice(0,500)||null, exercise_name:(o.name||'').slice(0,120)||null };
-}
-function queueEntry(key){ writeCache(); clearTimeout(entryTimers[key]); entryTimers[key]=setTimeout(()=>flushEntry(key),700); }
+function queueEntry(key){ clearTimeout(entryTimers[key]); entryTimers[key]=setTimeout(()=>flushEntry(key),700); }
 function flushEntryNow(key){ if(entryTimers[key]){ clearTimeout(entryTimers[key]); delete entryTimers[key]; } flushEntry(key); }
 async function flushEntry(key){
-  const snap={date, dayType, week, payload:collectEntry(key)};
-  if(!online){ enqueue({kind:'entry',...snap}); toast('off'); return; }
+  if(!db || !USER) return;
+  const o=store[key]||{};
+  const entry={ w:(o.w||''), r:(o.r||''), rir:(o.rir||''), note:(o.note||'').slice(0,500), name:(o.name||'').slice(0,120) };
+  const payload={ date, dayType, week_block:week, level_mode:level, updatedAt:Date.now(), entries:{ [key]: entry } };
   try{
-    const id=await ensureSession(snap.date,snap.dayType,snap.week);
-    const {error}=await sb.from('ppl_entries').upsert({...snap.payload, session_id:id, user_id:USER.id},{onConflict:'session_id,exercise_key'});
-    if(error) throw error;
-    toast('saved');
-    if(snap.date===date && snap.dayType===dayType){ await loadBest(DAYS[dayType].ex.map((_,i)=>dayType+'-'+i)); refreshBestUI(); }
-  }catch(e){ enqueue({kind:'entry',...snap}); toast(/JWT|expired|401|403/i.test(e.message||'')?'err':'off'); }
+    const p=setDoc(sref(date, dayType), payload, {merge:true});
+    if(!online){ toast('off'); p.catch(()=>{}); }
+    else { await p; toast('saved'); await loadBest(); refreshBestUI(); }
+  }catch(e){ toast('err'); }
 }
 
 /* ---------- 쓰기: 세션 메타 ---------- */
-let metaTimers={};
-function queueMeta(patch,key){ Object.assign(sessionMeta,patch); writeCache(); clearTimeout(metaTimers[key]); metaTimers[key]=setTimeout(()=>flushMeta(patch),600); }
+const metaTimers={};
+function queueMeta(patch,key){ Object.assign(sessionMeta,patch); clearTimeout(metaTimers[key]); metaTimers[key]=setTimeout(()=>flushMeta(patch),600); }
 async function flushMeta(patch){
-  const snap={date,dayType,week,patch};
-  if(!online){ enqueue({kind:'session',...snap}); toast('off'); return; }
+  if(!db || !USER) return;
+  const payload={ date, dayType, week_block:week, level_mode:level, updatedAt:Date.now(), ...patch };
   try{
-    const id=await ensureSession(date,dayType,week);
-    const {error}=await sb.from('ppl_sessions').update(patch).eq('id',id);
-    if(error) throw error;
-    toast('saved');
-  }catch(e){ enqueue({kind:'session',...snap}); toast(/JWT|expired|401|403/i.test(e.message||'')?'err':'off'); }
+    const p=setDoc(sref(date, dayType), payload, {merge:true});
+    if(!online){ toast('off'); p.catch(()=>{}); }
+    else { await p; toast('saved'); }
+  }catch(e){ toast('err'); }
 }
 
 /* ---------- 렌더 ---------- */
@@ -616,20 +577,21 @@ function renderDay(k){
 async function renderHistory(){
   const main=$('#main');
   main.innerHTML=`<section class="view"><div class="dayhead"><span class="num">HISTORY</span><h2>기록</h2></div><div id="hlist" class="hempty">불러오는 중…</div></section>`;
-  if(!sb||!USER){ $('#hlist').textContent='로그인이 필요합니다.'; return; }
+  if(!db||!USER){ $('#hlist').textContent='로그인이 필요합니다.'; return; }
   try{
-    const {data,error}=await sb.from('ppl_sessions').select('*').order('session_date',{ascending:false}).limit(90);
-    if(error) throw error;
+    const qs=await getDocs(query(collection(db,'users',USER.uid,'sessions'), orderBy('date','desc'), limit(90)));
     const list=$('#hlist');
-    if(!data||!data.length){ list.className='hempty'; list.textContent='아직 기록이 없습니다. 운동을 입력하면 여기에 날짜별로 쌓입니다.'; return; }
+    if(qs.empty){ list.className='hempty'; list.textContent='아직 기록이 없습니다. 운동을 입력하면 여기에 날짜별로 쌓입니다.'; return; }
     const emo={1:'😣',2:'😐',3:'😀'};
     list.className='';
-    list.innerHTML=data.map(s=>`<div class="hsess" data-d="${esc(s.session_date)}" data-t="${esc(s.day_type)}">
-      <div class="hh"><span class="hd">${esc(s.session_date)} (${weekdayKr(s.session_date)})</span>
-        <span class="ht" style="color:var(${DAYS[s.day_type]?DAYS[s.day_type].color:'--text'})">${DAYS[s.day_type]?DAYS[s.day_type].name:esc(s.day_type)}</span>
+    const rows=[];
+    qs.forEach(docu=>{ const s=docu.data(); rows.push(`<div class="hsess" data-d="${esc(s.date)}" data-t="${esc(s.dayType)}">
+      <div class="hh"><span class="hd">${esc(s.date)} (${weekdayKr(s.date)})</span>
+        <span class="ht" style="color:var(${DAYS[s.dayType]?DAYS[s.dayType].color:'--text'})">${DAYS[s.dayType]?DAYS[s.dayType].name:esc(s.dayType)}</span>
         <span class="hw">${s.week_block==='H'?'하이퍼':'스트렝스'}${s.is_deload?' · 디로드':''}${s.level_mode==='onb'?' · 온보딩':''}</span>
         <span class="hc">${s.condition?emo[s.condition]:''}</span></div>
-      ${s.memo?`<div class="hmemo">${esc(s.memo)}</div>`:''}</div>`).join('');
+      ${s.memo?`<div class="hmemo">${esc(s.memo)}</div>`:''}</div>`); });
+    list.innerHTML=rows.join('');
     list.querySelectorAll('.hsess').forEach(el=>el.addEventListener('click',()=>{
       date=el.dataset.d; setDateInput();
       go(el.dataset.t);
@@ -692,7 +654,7 @@ function build(){
   $('#dNext').addEventListener('click',()=>{ date=shiftDate(date, 1); setDateInput(); if(isDay()) loadDay(); else render(); });
   $('#dToday').addEventListener('click',()=>{ date=kstToday(); setDateInput(); if(isDay()) loadDay(); else render(); });
   $('#dInput').addEventListener('change',e=>{ if(e.target.value){ date=e.target.value; setDateInput(); if(isDay()) loadDay(); else render(); }});
-  $('#logout').addEventListener('click', async ()=>{ await sb.auth.signOut(); sessIds={}; store={}; sessionMeta={}; bestMap={}; });
+  $('#logout').addEventListener('click', async ()=>{ await signOut(auth); store={}; sessionMeta={}; bestMap={}; });
   setDateInput();
   // main 위임 핸들러
   const main=$('#main');
