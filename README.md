@@ -8,10 +8,10 @@
 
 1. **프로젝트 생성** — https://console.firebase.google.com → **프로젝트 추가**. (Google Analytics는 꺼도 됨)
 2. **웹 앱 등록** — 프로젝트 개요 → `</>` (웹) 추가 → 앱 닉네임 입력 → 표시되는 **`firebaseConfig` 객체 복사**.
-3. **Authentication** → 시작하기 → **Email/Password** 공급자 **사용 설정**.
+3. **Authentication** → 시작하기 → **Google** 공급자 **사용 설정** (지원 이메일 선택만 하면 됨).
 4. **Firestore Database** → 데이터베이스 만들기 → 위치 `asia-northeast3 (Seoul)` → **프로덕션 모드**로 생성 → **규칙(Rules)** 탭에 [`firestore.rules`](./firestore.rules) 내용 붙여넣고 **게시**.
 5. **승인 도메인** — Authentication → Settings → **Authorized domains** 에 `nisloke.github.io` 추가.
-6. **계정 2개 생성** — Authentication → Users → **Add user** 로 페코·뭉이 이메일/비번 등록. (또는 앱에서 회원가입)
+6. **화이트리스트** — `index.html` 상단 `ALLOW` 배열에 허용할 Google 이메일(페코·뭉이)을 넣음. 그 외 계정은 로그인해도 자동 로그아웃됨. (별도 계정 생성 불필요 — 각자 Google로 첫 로그인 시 자동 생성)
 7. **config 적용** — 2번에서 복사한 config를 `index.html` 상단 `FB_CONFIG`에 넣고 푸시. (비워두면 앱 첫 화면에서 직접 붙여넣기 가능)
 
 > `apiKey` 등 Firebase config는 클라이언트에 노출되도록 설계된 **공개 값**이라 코드/공개 리포에 들어가도 안전합니다. 데이터 보호는 **Firestore 보안 규칙**(본인 `users/{uid}`만)이 담당합니다. 관리자(Admin) 키는 절대 클라이언트에 넣지 않습니다.
