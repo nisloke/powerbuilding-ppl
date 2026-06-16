@@ -356,8 +356,7 @@ function renderConfig(){
     <label class="field"><span>Project URL</span><input id="cfgUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" inputmode="url"></label>
     <label class="field"><span>anon public key</span><input id="cfgKey" placeholder="eyJhbGciOi..." autocomplete="off"></label>
     <button class="gbtn" id="cfgSave">저장하고 시작</button>
-    <div class="gmsg" id="cfgMsg"></div>
-    <p class="ghint">Supabase 대시보드 → <b>Project Settings → API</b> 에서 <b>Project URL</b> 과 <b>anon public</b> 키를 복사하면 됩니다. (입력값은 이 브라우저에만 저장)</p>`;
+    <div class="gmsg" id="cfgMsg"></div>`;
   $('#cfgSave').addEventListener('click',()=>{
     const url=$('#cfgUrl').value.trim(), key=$('#cfgKey').value.trim();
     const m=$('#cfgMsg');
@@ -383,9 +382,8 @@ function renderAuth(){
     <p class="h">각자 본인 계정으로 로그인하면 본인 기록만 보입니다.</p>
     <label class="field"><span>이메일</span><input id="auEmail" type="email" autocomplete="username" placeholder="you@example.com"></label>
     <label class="field"><span>비밀번호</span><input id="auPw" type="password" autocomplete="current-password" placeholder="6자 이상"></label>
-    <div class="grow"><button class="gbtn" id="auLogin">로그인</button><button class="gbtn alt" id="auSignup">회원가입</button></div>
-    <div class="gmsg" id="auMsg"></div>
-    <p class="ghint"><b>처음이라면</b> 회원가입을 누르세요. 가입 즉시 사용하려면 Supabase → Authentication → Sign In/Providers → Email 의 <b>“Confirm email”을 끄세요</b>. <button class="glink" id="reCfg2">설정 변경</button></p>`;
+    <div class=”grow”><button class=”gbtn” id=”auLogin”>로그인</button><button class=”gbtn alt” id=”auSignup”>회원가입</button></div>
+    <div class=”gmsg” id=”auMsg”></div>`;
   const msg=$('#auMsg');
   const getv=()=>({email:$('#auEmail').value.trim(), password:$('#auPw').value});
   $('#auLogin').addEventListener('click', async ()=>{
@@ -400,9 +398,8 @@ function renderAuth(){
     const {data,error}=await sb.auth.signUp({email,password});
     if(error){ msg.className='gmsg err'; msg.textContent=authErr(error.message); return; }
     if(data.session){ msg.className='gmsg ok'; msg.textContent='가입 완료!'; }
-    else { msg.className='gmsg ok'; msg.textContent='확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 로그인하세요. (또는 Supabase에서 Confirm email 끄기)'; }
+    else { msg.className='gmsg ok'; msg.textContent='확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 로그인하세요.'; }
   });
-  $('#reCfg2').addEventListener('click',()=>{ localStorage.removeItem(CFG_KEY); renderConfig(); });
 }
 function authErr(m){
   if(/Invalid login/i.test(m)) return '이메일 또는 비밀번호가 틀렸습니다.';
