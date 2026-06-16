@@ -1,0 +1,758 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="파워빌딩 PPL 주 6회 트레이닝 일지 — 날짜별 기록·메모·e1RM 추세, Supabase 동기화">
+<meta name="theme-color" content="#121418">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PPL 일지">
+<title>파워빌딩 PPL · 일지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#121418; --panel:#1A1D24; --panel2:#21252E; --line:#2C313B;
+    --text:#E7E9ED; --muted:#9AA0AB; --faint:#7E8694;
+    --push:#F2994A; --pull:#3FBFD4; --legs:#B084E8; --flag:#E8C25A; --rom:#5FD3A8;
+    --accent:var(--push); --bad:#E07A7A;
+    --mono:'Space Mono',monospace; --sans:'Archivo',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 0 56px}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+  .wrap{max-width:780px;margin:0 auto;padding:18px 16px 0}
+  [hidden]{display:none !important}
+
+  /* ===== gate (config / auth) ===== */
+  .gate{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+  .gcard{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 20px}
+  .gcard h1{font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:0 0 4px}
+  .gcard .big{font-size:21px;font-weight:900;margin:0 0 4px;letter-spacing:-.01em}
+  .gcard .big em{font-style:normal;color:var(--accent)}
+  .gcard p.h{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  .field{display:block;margin:0 0 11px}
+  .field span{display:block;font-size:11px;color:var(--muted);font-weight:700;margin:0 0 5px;letter-spacing:.02em}
+  .field input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:11px 12px;font-family:var(--sans);font-size:14px}
+  .field input:focus{outline:none;border-color:var(--accent)}
+  .gbtn{width:100%;background:var(--accent);color:#15171c;border:0;border-radius:10px;padding:12px;font-family:var(--sans);font-weight:800;font-size:14px;cursor:pointer;margin-top:4px}
+  .gbtn.alt{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+  .grow{display:flex;gap:8px;margin-top:4px}
+  .grow .gbtn{margin-top:0}
+  .gmsg{font-size:12.5px;margin:10px 0 0;min-height:16px}
+  .gmsg.err{color:var(--bad)} .gmsg.ok{color:var(--rom)}
+  .ghint{font-size:11.5px;color:var(--faint);margin:14px 0 0;line-height:1.6;border-top:1px dashed var(--line);padding-top:12px}
+  .ghint b{color:var(--muted)}
+  .glink{color:var(--accent);cursor:pointer;text-decoration:underline;background:none;border:0;font:inherit;padding:0}
+
+  header h1{font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 4px}
+  header .lede{font-size:23px;font-weight:900;margin:0;letter-spacing:-.01em}
+  header .lede em{font-style:normal;color:var(--accent)}
+  header .sub{color:var(--muted);font-size:12.5px;margin:6px 0 0}
+  .whoami{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+  .whoami b{color:var(--text)}
+  .whoami .out{margin-left:auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:7px;padding:4px 10px;font-weight:700;font-size:11px;cursor:pointer}
+  .sync{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+  .sync.off{color:var(--flag)}
+
+  .bar{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 4px}
+  .seg{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
+  .seg .lbl{font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.06em;padding:0 10px;text-transform:uppercase}
+  .seg button{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:12.5px;padding:8px 13px;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#15171c}
+
+  /* date bar */
+  .datebar{display:flex;align-items:center;gap:8px;margin:14px 0 2px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px}
+  .datebar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:34px;height:34px;font-size:16px;font-weight:800;cursor:pointer;line-height:1;flex:none}
+  .datebar .di{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px}
+  .datebar input[type=date]{background:none;border:0;color:var(--text);font-family:var(--mono);font-size:14px;font-weight:700;text-align:center;width:100%;color-scheme:dark}
+  .datebar .dw{font-size:10.5px;color:var(--faint);font-weight:700}
+  .datebar .today{flex:none;font-size:11px;font-weight:700;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0 10px;height:34px;cursor:pointer}
+
+  .tabs{display:flex;gap:3px;margin:16px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:13.5px;padding:10px 11px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab:hover{color:var(--text)} .tab.on{color:var(--text);border-bottom-color:var(--accent)}
+
+  .view{animation:fade .2s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+
+  .dayhead{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin:2px 0 6px}
+  .dayhead .num{font-family:var(--mono);font-size:12px;color:var(--accent)}
+  .dayhead h2{font-size:20px;font-weight:900;margin:0}
+  .cond{display:inline-flex;align-items:center;gap:5px;margin-left:auto}
+  .cond span{font-size:10.5px;color:var(--muted);font-weight:700}
+  .cond button{background:var(--panel);border:1px solid var(--line);border-radius:7px;font-size:14px;line-height:1;padding:4px 7px;cursor:pointer}
+  .cond button.on{border-color:var(--accent);background:var(--panel2)}
+  .meta{font-size:12px;color:var(--muted);margin:0 0 12px;padding:8px 11px;background:var(--panel2);border-radius:8px;border-left:3px solid var(--accent)}
+  .meta b{color:var(--text)}
+
+  /* session panel: memo + bodyweight/sleep/deload */
+  .spanel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin:0 0 12px}
+  .spanel textarea{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 10px;font-family:var(--sans);font-size:13.5px;resize:vertical;min-height:54px;line-height:1.5}
+  .spanel textarea:focus{outline:none;border-color:var(--accent)}
+  .spanel .srow{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .spanel .sf{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-weight:700}
+  .spanel .sf input{width:62px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:6px 8px;font-family:var(--mono);font-size:13px;text-align:center}
+  .spanel .sf input:focus{outline:none;border-color:var(--accent)}
+  .spanel .dl{margin-left:auto}
+  .spanel .dl button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:7px;padding:6px 11px;font-weight:700;font-size:11.5px;cursor:pointer}
+  .spanel .dl button.on{border-color:var(--flag);color:var(--flag);background:rgba(232,194,90,.1)}
+
+  .ex{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-bottom:10px;border-left:3px solid var(--accent)}
+  .ex-top{display:flex;gap:12px;align-items:flex-start}
+  .ex-num{font-family:var(--mono);font-size:12px;color:var(--faint);padding-top:2px;width:20px;flex:none}
+  .ex-main{flex:1;min-width:0}
+  .ex-name{font-weight:700;font-size:15.5px;word-break:keep-all}
+  .ex-cue{color:var(--muted);font-size:12.5px;margin-top:3px;word-break:keep-all}
+  .ex-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+  .ex-rx{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--text);background:var(--panel2);border-radius:7px;padding:5px 9px;white-space:nowrap}
+  .tempo{font-family:var(--mono);font-size:10.5px;color:var(--rom);background:rgba(95,211,168,.08);border:1px solid rgba(95,211,168,.25);border-radius:6px;padding:3px 7px;white-space:nowrap;letter-spacing:.02em}
+  .yt{font-family:var(--sans);font-size:11.5px;font-weight:700;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:7px;padding:4px 9px;white-space:nowrap}
+  .yt:hover{border-color:var(--accent);background:var(--panel2)}
+
+  .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:20px;vertical-align:middle;margin-left:6px;background:rgba(232,194,90,.13);color:var(--flag);border:1px solid rgba(232,194,90,.3);word-break:keep-all;white-space:nowrap}
+  .flagnote{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12.5px;background:rgba(232,194,90,.07);border-left:2px solid var(--flag);color:#D8C896}
+  .romnote{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12.5px;background:rgba(95,211,168,.08);border-left:2px solid var(--rom);color:#A7E5CD}
+  .romnote b{color:var(--rom)}
+  .badge.rom{background:rgba(95,211,168,.13);color:var(--rom);border:1px solid rgba(95,211,168,.3)}
+
+  .log{display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);flex-wrap:wrap}
+  .log label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:600}
+  .log input{width:58px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 8px;font-family:var(--mono);font-size:13px;text-align:center}
+  .log input.note{width:130px;text-align:left;font-family:var(--sans);font-size:12px}
+  .log input:focus{outline:none;border-color:var(--accent)}
+  .e1rm{margin-left:auto;font-size:11.5px;color:var(--muted);font-family:var(--mono);background:var(--panel2);border-radius:7px;padding:6px 10px;white-space:nowrap}
+  .e1rm b{color:var(--rom);font-size:13.5px}
+  .e1rm .best{color:var(--faint)}
+
+  .cardio{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--panel2);font-size:13px;color:var(--muted)}
+  .cardio b{color:var(--text)}
+
+  .warm{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--rom);border-radius:12px;padding:13px 15px;margin:0 0 14px}
+  .warm-h{font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .warm-sub{font-weight:400;font-size:11px;color:var(--faint)}
+  .wu-note{font-size:12px;color:#A7E5CD;margin:8px 0 4px}
+  .wu-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed var(--line)}
+  .wu-main{flex:1;min-width:0}
+  .wu-n{font-weight:700;font-size:13.5px;word-break:keep-all}
+  .wu-c{font-size:12px;color:var(--muted);margin-top:1px;word-break:keep-all}
+  .wu-ramp{font-size:11.5px;color:var(--faint);margin-top:9px;padding-top:8px;border-top:1px dashed var(--line)}
+
+  .p{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:11px}
+  .p h3{margin:0 0 7px;font-size:15px;font-weight:800}
+  .p p{margin:0;color:var(--muted);font-size:13.5px}
+  .p p+p{margin-top:7px}
+  .p .k{color:var(--text);font-weight:600}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:6px;background:var(--panel2);color:var(--accent);margin-right:6px}
+  .src{font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.6}
+  .cut{color:#D98A8A}
+
+  /* history */
+  .hsess{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:9px;cursor:pointer}
+  .hsess:hover{border-color:var(--faint)}
+  .hh{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .hh .hd{font-family:var(--mono);font-size:13px;font-weight:700}
+  .hh .ht{font-weight:800;font-size:13.5px}
+  .hh .hw{font-family:var(--mono);font-size:10.5px;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+  .hh .hc{margin-left:auto;font-size:14px}
+  .hmemo{font-size:12.5px;color:var(--muted);margin-top:6px;word-break:keep-all;white-space:pre-wrap}
+  .hempty{color:var(--faint);font-size:13px;text-align:center;padding:30px 0}
+
+  .save{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 16px;border-radius:30px;font-size:12.5px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:60}
+  .save.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .save.err{border-color:var(--bad);color:var(--bad)} .save.off{border-color:var(--flag);color:var(--flag)}
+
+  .fab{position:fixed;right:16px;bottom:18px;width:56px;height:56px;border-radius:50%;background:var(--rom);color:#10231C;border:none;font-size:22px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:50;display:flex;align-items:center;justify-content:center}
+  .fab:active{transform:scale(.94)}
+  .fpanel{position:fixed;right:16px;bottom:84px;width:280px;max-width:calc(100vw - 32px);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.5);transform:translateY(12px) scale(.98);opacity:0;pointer-events:none;transition:.18s}
+  .fpanel.open{transform:none;opacity:1;pointer-events:auto}
+  .fp-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:8px}
+  .fp-time{font-family:var(--mono);font-size:42px;font-weight:700;text-align:center;letter-spacing:.02em;margin:2px 0 8px}
+  .fp-time.done{color:var(--rom)}
+  .fp-row{display:flex;gap:6px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
+  .fp-row button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer;min-width:40px}
+  .fp-row button.go{background:var(--rom);color:#10231C;border-color:var(--rom)}
+  .fp-row button.pre{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .fp-div{height:1px;background:var(--line);margin:12px 0}
+  .fp-set{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .fp-set .lab{font-size:12.5px;color:var(--muted);font-weight:700}
+  .fp-set .ctr{display:flex;align-items:center;gap:12px}
+  .fp-set .ctr button{width:38px;height:38px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);font-size:20px;font-weight:800;cursor:pointer;line-height:1}
+  .fp-set .ctr .n{font-family:var(--mono);font-size:24px;font-weight:700;min-width:28px;text-align:center}
+
+  @media(max-width:520px){
+    header .lede{font-size:20px}
+    .ex-top{flex-wrap:wrap}
+    .ex-main{flex:1 1 calc(100% - 32px);min-width:0}
+    .ex-side{order:3;flex:0 0 100%;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;margin-top:6px;flex-wrap:wrap}
+    .cond{margin-left:0;width:100%}
+    .log input.note{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== gate: 설정 / 로그인 ===== -->
+<div class="gate" id="gate">
+  <div class="gcard" id="gcard"></div>
+</div>
+
+<!-- ===== app ===== -->
+<div class="wrap" id="app" hidden>
+  <header>
+    <h1>Powerbuilding · Push Pull Legs</h1>
+    <p class="lede">주 6회 <em>일지</em> · 날짜별 기록</p>
+    <p class="sub">부위당 주 2회 · 주간 블록(스트렝스/하이퍼트로피) · 프리웨이트 중심 · 유산소 포함 60분 내외</p>
+    <div class="whoami"><span>기록자 <b id="meEmail">—</b></span><span class="sync" id="syncDot">● 동기화</span><button class="out" id="logout">로그아웃</button></div>
+  </header>
+
+  <div class="bar">
+    <div class="seg" id="weekSeg"><span class="lbl">이번 주</span>
+      <button data-week="S">스트렝스</button><button data-week="H">하이퍼트로피</button></div>
+    <div class="seg" id="lvlSeg"><span class="lbl">숙련도</span>
+      <button data-lvl="adv">숙련</button><button data-lvl="onb">온보딩</button></div>
+  </div>
+
+  <div class="datebar" id="datebar">
+    <button id="dPrev" aria-label="이전 날">‹</button>
+    <div class="di"><input type="date" id="dInput" aria-label="운동 날짜"><span class="dw" id="dWeekday"></span></div>
+    <button id="dNext" aria-label="다음 날">›</button>
+    <button class="today" id="dToday">오늘</button>
+  </div>
+
+  <nav class="tabs" id="tabs"></nav>
+  <main id="main"></main>
+</div>
+
+<div class="save" id="save">저장됨</div>
+
+<button class="fab" id="fab" aria-label="휴식 타이머" hidden>⏱</button>
+<div class="fpanel" id="fpanel" hidden>
+  <div class="fp-h">휴식 타이머</div>
+  <div class="fp-time" id="fpTime">1:30</div>
+  <div class="fp-row">
+    <button class="pre" data-set="60">60s</button>
+    <button class="pre" data-set="90">90s</button>
+    <button class="pre" data-set="120">120s</button>
+    <button class="pre" data-set="180">180s</button>
+  </div>
+  <div class="fp-row">
+    <button data-adj="-15">−15</button>
+    <button class="go" id="fpToggle">시작</button>
+    <button data-adj="15">+15</button>
+    <button id="fpReset">리셋</button>
+  </div>
+  <div class="fp-div"></div>
+  <div class="fp-set">
+    <span class="lab">세트 카운트</span>
+    <div class="ctr">
+      <button id="setMinus">−</button>
+      <span class="n" id="setN">0</span>
+      <button id="setPlus">+</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   설정: 아래 두 값을 채우면 설정 화면을 건너뜁니다(선택).
+   비워두면 첫 실행 시 브라우저에서 직접 입력합니다.
+   둘 다 공개해도 안전한 값입니다(보안은 RLS가 담당).
+   ============================================================ */
+const HARDCODED = { url:'', anonKey:'' };
+
+/* ---------- 유틸 ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const numOrNull = v => { const n=parseFloat(v); return isFinite(n)?n:null; };
+const intOrNull = v => { const n=parseInt(v,10); return isFinite(n)?n:null; };
+const CFG_KEY='pb-cfg';
+function getCfg(){ if(HARDCODED.url&&HARDCODED.anonKey) return {url:HARDCODED.url.trim(),key:HARDCODED.anonKey.trim()};
+  try{ return JSON.parse(localStorage.getItem(CFG_KEY)||'null'); }catch(e){ return null; } }
+function kstToday(){ const d=new Date(Date.now()+9*3600*1000); return d.toISOString().slice(0,10); }
+function weekdayKr(iso){ const wd=['일','월','화','수','목','금','토']; const d=new Date(iso+'T00:00:00+09:00'); return wd[d.getDay()]; }
+function shiftDate(iso,delta){ const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+delta); return d.toISOString().slice(0,10); }
+
+/* ---------- 프로그램 데이터 ---------- */
+const FLAG='무릎·힙', FLAGP='자세 교정', FLAGC='코어·마무리';
+const DAYS = {
+  push:{name:'Push',kr:'가슴 · 어깨 · 삼두',color:'--push',ex:[
+    {n:'바벨 벤치프레스 (플랫)', s:'5 × 5 (+백오프 1)', h:'4 × 8–12', tempo:'2-0-1', yt:'0cXAp6WhSj4', c:'견갑 후인·하강. 바는 가슴 하부(젖꼭지 라인), 전완 수직. 대흉근 전체·중하부 메인.', rom:'풀 ROM — 바를 가슴까지 깊이, 깊이 컷 금지. 늘어난 바닥 구간이 자극·길이 확보의 핵심.'},
+    {n:'오버헤드 프레스 (바벨/덤벨)', s:'5 × 5', h:'3 × 8–12', tempo:'2-0-1', yt:'CDX3jifKqZ4', c:'갈비뼈(흉곽) 닫아 허리 과신전 방지. 견갑은 위로 회전(고정 X).'},
+    {n:'인클라인 덤벨 프레스 또는 딥', s:'3 × 6–8', h:'3 × 10–15', tempo:'3-1-1', yt:'8fXfwG4ftaQ', c:'윗가슴(쇄골두) — 인클라인 ~30도. 딥은 앞으로 기울여 하부 가슴.', rom:'늘어난 위치 부하 — 바닥에서 가슴 깊게 스트레치 + <b>편심성 3~4초</b>. 가슴(내회전 타이트) 길이 확보. 스미스보다 덤벨이 스트레치 깊이 유리.'},
+    {n:'케이블 / lean-away 사이드 레터럴', s:'3 × 10–12', h:'4 × 15–20', tempo:'2-1-1', yt:'Kl3LEzQ5Zqs', c:'가볍게·반동 X. 고립이라 마지막 세트만 실패 OK.', rom:'바닥(늘어난 구간)에 장력 유지 — 일반 덤벨은 바닥 장력 0. <b>케이블/몸 기울여</b> 측면 삼각근 늘어난 구간 부하.'},
+    {n:'오버헤드 삼두 익스텐션 (또는 푸시다운)', s:'3 × 8–10', h:'3 × 12–20', tempo:'3-1-1', yt:'7OF77JMEXhM', c:'보조. 팔꿈치 옆 고정, 끝까지 펴기.', rom:'머리 위 자세 = <b>장두 늘어난 구간</b> → 푸시다운보다 비대 큼. 깊은 신전에서 스트레치.'},
+    {n:'행잉 레그레이즈 (또는 리버스 크런치)', s:'3 × 10–15', h:'3 × 12–20', tempo:'2-1-2', yt:'FMYJ1lgtSoY', flag:FLAGC, fnote:'세션 맨 마지막. 복직근·하복부(굴곡). 골반 말아 올리고 반동 X. 초보는 무릎 굽힌 니레이즈.'},
+  ]},
+  pull:{name:'Pull',kr:'등 · 이두',color:'--pull',ex:[
+    {n:'바벨 로우 (또는 주 1회 데드리프트)', s:'5 × 5', h:'4 × 8–12', tempo:'2-0-1', yt:'QdDrKsvZuvQ', c:'힙힌지·등 중립, 배꼽 쪽으로. 데드 선택 시: 허리가 말리는 순간 = 그 세트 종료(부상 차단).', rom:'시작에서 견갑 앞으로 충분히(광배 늘림) → 당길 때 끝범위 적극 후인. 편심성 통제.'},
+    {n:'풀업 또는 랫풀다운', s:'4 × 5–6', h:'3 × 10–12', tempo:'2-1-1', yt:'bNmvKpJSWKM', c:'광배 세로 자극. 가슴을 바 쪽으로.', rom:'<b>상단 완전 신전</b> — 팔 끝까지 뻗어 광배 늘린 뒤 당기기. 늘어난 구간 확보.'},
+    {n:'시티드 로우 / 덤벨 로우', s:'3 × 6–8', h:'3 × 10–15', tempo:'2-1-1', yt:'8QuMq1GMMng', c:'등 가로 두께. 견갑 모으며 당기기.', rom:'끝에서 견갑을 앞으로 내보내 등 스트레치 확보 → 당길 때 끝범위 적극 후인.'},
+    {n:'페이스풀 (+ 외회전)', s:'3 × 12–15', h:'3 × 15–20', tempo:'2-2-1', yt:'sHSY0Ao8QHs', flag:FLAGP, fnote:'라운드숄더 교정 — 후면 삼각근 + 외회전. 팔꿈치 높게, 손은 귀 옆으로. 항상 고반복·저강도.', rom:'<b>능동 유연성의 핵심.</b> 끝범위에서 외회전·견갑 후인을 적극 수축(정지 2초) → 상호억제로 가슴·내회전근 이완. 라운드숄더 길항근 강화. 외회전(밴드/케이블) 1종 추가 권장.'},
+    {n:'인클라인 덤벨 컬', s:'3 × 8–10', h:'3 × 12–15', tempo:'3-1-1', yt:'ICAXJVmOJik', c:'벤치에 기대 팔을 뒤로. 반동 없이 짜내기.', rom:'기댄 자세로 어깨 신전 → <b>이두 장두 늘어난 위치</b>에서 시작. stretch-mediated 성장 + 길이.'},
+    {n:'팔로프 프레스 (또는 케이블 우드촵)', s:'3 × 10–12 / 측', h:'3 × 12–15 / 측', tempo:'버티기', yt:'PbkMHHFIkVk', flag:FLAGC, fnote:'세션 맨 마지막. 복사근·항회전. 케이블을 옆에 두고 가슴 앞으로 밀어 회전에 버티기. 좌우 동일.'},
+  ]},
+  legs:{name:'Legs',kr:'하체',color:'--legs',ex:[
+    {n:'바벨 스쿼트', s:'5 × 5 (+백오프 1)', h:'3–4 × 8–12', tempo:'2-0-1', yt:'W6o1A0bEnmU', flag:FLAG, fnote:'무릎 발끝 방향, 통증 없는 범위. 스트렝스 주는 스쿼트랙·세이프티 바 필수.', rom:'통증 없는 <b>깊은 범위</b> = 대퇴사두·둔근 긴 길이. 편심성 통제.'},
+    {n:'루마니안 데드리프트 (RDL)', s:'4 × 5–6', h:'3 × 8–12', tempo:'3-1-1', yt:'d-hn_0sEpRQ', flag:FLAG, fnote:'후면사슬·힙힌지. 엉덩이 뒤로, 햄스트링 늘어나는 느낌까지. 허리로 펴지 말 것.', rom:'<b>느린 편심성 3~4초 + 바닥 햄스트링 스트레치 최대.</b> 후면사슬 길이·둔근 유연성. 둔근·햄(고관절 신전근)이 타이트한 고관절 굴곡근의 길항근.'},
+    {n:'불가리안 스플릿 스쿼트', s:'3 × 6–8 / 측', h:'3 × 10–12 / 측', tempo:'3-1-1', yt:'or1frhkjBDc', flag:FLAG, fnote:'한다리. 상체 약간 앞으로(힙힌지) → 후면 힙 드라이브, 무릎 전방이동 최소화.', rom:'앞다리 깊은 굴곡으로 둔근 늘어난 위치 부하 + 편심성 통제. 뒷다리 고관절 굴곡근 스트레치도 동반.'},
+    {n:'케틀벨 스윙', s:'4 × 8–10', h:'3 × 15–20', tempo:'폭발적', yt:'n1df4ASFeZU', flag:FLAG, fnote:'후면 힙 드라이브 폭발력. 힙으로 던지고 팔은 줄. 스쿼트 아님.'},
+    {n:'티비알리스 + 카프 레이즈', s:'각 3 × 12–15', h:'각 3 × 15–20', tempo:'2-2-1', yt:'e29hIc-OC84', flag:FLAG, fnote:'정강이 강화로 발목 도르시플렉션 확보·무릎 전방이동 억제. (티비알리스 = 카프의 직접 길항근)', rom:'카프는 발뒤꿈치를 <b>깊이 떨어뜨려 바닥 스트레치 1~2초 정지</b> — 종아리 늘어난 구간 반응 큼. 발목 ROM 확보.'},
+  ]},
+};
+const SHOULDER_WU=[
+  {n:'밴드 풀어파트', c:'후면 어깨·승모 적극 수축하며 가슴 열기 · ×10', u:'https://www.youtube.com/shorts/PlcK-vBZRuE'},
+  {n:'밴드 외회전', c:'팔꿈치 옆 고정, 외회전 끝범위 2초 · ×10/측', u:'https://www.youtube.com/watch?v=ybNV36DoRfY'},
+  {n:'월 슬라이드', c:'허리 벽에 붙이고 팔 위아래, 중하부 승모 · ×8', u:'https://www.youtube.com/shorts/bbosI4miDDg'},
+];
+const LEGS_WU=[
+  {n:'능동 카우치 스트레치', c:'뒷다리 무릎 굽힘 + 둔근 짜기 → 고관절 굴곡근 이완 · ×8/측', u:'https://www.youtube.com/shorts/7dOu7Pqr-bc'},
+  {n:'글루트 브리지', c:'둔근 끝범위 2초 수축 → 둔근 활성·굴곡근 이완 · ×10', u:'https://www.youtube.com/watch?v=J4b0uRf-n6I'},
+  {n:'능동 레그 레이즈', c:'대퇴사두 수축으로 다리 들기 → 햄스트링 이완 · ×8/측', u:'https://www.youtube.com/watch?v=Enz7jtRq_ik'},
+  {n:'무릎-투-월 발목', c:'발뒤꿈치 고정, 무릎 앞으로 → 발목 도르시플렉션 · ×8/측', u:'https://www.youtube.com/shorts/KAAVKi3v700'},
+];
+const WARMUP={push:SHOULDER_WU, pull:SHOULDER_WU, legs:LEGS_WU};
+const WARMUP_NOTE={
+  push:'어깨·가슴(라운드숄더) — 길항근(후면 어깨·외회전근)을 적극 수축해 가슴·내회전근을 이완',
+  pull:'어깨·가슴(라운드숄더) — 길항근(후면 어깨·외회전근)을 적극 수축해 가슴·내회전근을 이완',
+  legs:'고관절·햄스트링·발목 — 둔근·대퇴사두를 수축해 굴곡근·햄스트링을 이완'};
+
+/* ---------- 상태 ---------- */
+let sb=null, USER=null, built=false, online=navigator.onLine;
+let store={}, sessionMeta={}, bestMap={}, sessIds={};
+let active='push', dayType='push', date=kstToday();
+let week='S', level='adv';
+const OUTBOX='pb-outbox';
+function uid(){ return USER ? USER.id : 'anon'; }
+function lk(name){ return 'pb-'+name+'-'+uid(); }
+
+/* ---------- 부트 ---------- */
+function boot(){
+  const cfg=getCfg();
+  if(!cfg || !cfg.url || !cfg.key){ renderConfig(); return; }
+  if(typeof supabase==='undefined'){ renderFatal('Supabase 라이브러리를 불러오지 못했습니다. 네트워크 연결을 확인하고 새로고침하세요.'); return; }
+  try{ sb=supabase.createClient(cfg.url, cfg.key, {auth:{persistSession:true, autoRefreshToken:true}}); }
+  catch(e){ renderFatal('설정값이 올바르지 않습니다: '+esc(e.message)+'. 설정을 다시 입력하세요.'); return; }
+  sb.auth.onAuthStateChange((_ev, session)=>{ USER=session?session.user:null; if(USER) showApp(); else renderAuth(); });
+  sb.auth.getSession().then(({data})=>{ USER=data.session?data.session.user:null; if(USER) showApp(); else renderAuth(); })
+    .catch(()=>renderAuth());
+  window.addEventListener('online', ()=>{ online=true; setSync(); drain(); });
+  window.addEventListener('offline', ()=>{ online=false; setSync(); });
+}
+
+/* ---------- 설정 화면 ---------- */
+function renderConfig(){
+  $('#app').hidden=true; $('#gate').hidden=false;
+  $('#gcard').innerHTML=`
+    <h1>최초 설정</h1>
+    <p class="big">PPL <em>일지</em> 연결</p>
+    <p class="h">Supabase 프로젝트 URL과 anon(public) 키를 입력하세요. 두 값 모두 공개돼도 안전합니다(보안은 RLS가 담당).</p>
+    <label class="field"><span>Project URL</span><input id="cfgUrl" placeholder="https://xxxx.supabase.co" autocomplete="off" inputmode="url"></label>
+    <label class="field"><span>anon public key</span><input id="cfgKey" placeholder="eyJhbGciOi..." autocomplete="off"></label>
+    <button class="gbtn" id="cfgSave">저장하고 시작</button>
+    <div class="gmsg" id="cfgMsg"></div>
+    <p class="ghint">Supabase 대시보드 → <b>Project Settings → API</b> 에서 <b>Project URL</b> 과 <b>anon public</b> 키를 복사하면 됩니다. (입력값은 이 브라우저에만 저장)</p>`;
+  $('#cfgSave').addEventListener('click',()=>{
+    const url=$('#cfgUrl').value.trim(), key=$('#cfgKey').value.trim();
+    const m=$('#cfgMsg');
+    if(!/^https:\/\/.+\.supabase\.co/.test(url)){ m.className='gmsg err'; m.textContent='URL 형식이 올바르지 않습니다 (https://xxxx.supabase.co)'; return; }
+    if(key.length<20){ m.className='gmsg err'; m.textContent='anon 키가 너무 짧습니다. 다시 확인하세요.'; return; }
+    localStorage.setItem(CFG_KEY, JSON.stringify({url,key}));
+    boot();
+  });
+}
+function renderFatal(msg){
+  $('#app').hidden=true; $('#gate').hidden=false;
+  $('#gcard').innerHTML=`<h1>오류</h1><p class="big">연결 실패</p><div class="gmsg err" style="margin-top:8px">${esc(msg)}</div>
+    <button class="gbtn alt" id="reCfg" style="margin-top:14px">설정 다시 입력</button>`;
+  $('#reCfg').addEventListener('click',()=>{ localStorage.removeItem(CFG_KEY); renderConfig(); });
+}
+
+/* ---------- 로그인 화면 ---------- */
+function renderAuth(){
+  $('#app').hidden=true; $('#gate').hidden=false; $('#fab').hidden=true; $('#fpanel').hidden=true;
+  $('#gcard').innerHTML=`
+    <h1>로그인</h1>
+    <p class="big">PPL <em>일지</em></p>
+    <p class="h">각자 본인 계정으로 로그인하면 본인 기록만 보입니다.</p>
+    <label class="field"><span>이메일</span><input id="auEmail" type="email" autocomplete="username" placeholder="you@example.com"></label>
+    <label class="field"><span>비밀번호</span><input id="auPw" type="password" autocomplete="current-password" placeholder="6자 이상"></label>
+    <div class="grow"><button class="gbtn" id="auLogin">로그인</button><button class="gbtn alt" id="auSignup">회원가입</button></div>
+    <div class="gmsg" id="auMsg"></div>
+    <p class="ghint"><b>처음이라면</b> 회원가입을 누르세요. 가입 즉시 사용하려면 Supabase → Authentication → Sign In/Providers → Email 의 <b>“Confirm email”을 끄세요</b>. <button class="glink" id="reCfg2">설정 변경</button></p>`;
+  const msg=$('#auMsg');
+  const getv=()=>({email:$('#auEmail').value.trim(), password:$('#auPw').value});
+  $('#auLogin').addEventListener('click', async ()=>{
+    const {email,password}=getv(); if(!email||!password){ msg.className='gmsg err'; msg.textContent='이메일과 비밀번호를 입력하세요.'; return; }
+    msg.className='gmsg'; msg.textContent='로그인 중...';
+    const {error}=await sb.auth.signInWithPassword({email,password});
+    if(error){ msg.className='gmsg err'; msg.textContent=authErr(error.message); }
+  });
+  $('#auSignup').addEventListener('click', async ()=>{
+    const {email,password}=getv(); if(!email||password.length<6){ msg.className='gmsg err'; msg.textContent='이메일과 6자 이상 비밀번호를 입력하세요.'; return; }
+    msg.className='gmsg'; msg.textContent='가입 중...';
+    const {data,error}=await sb.auth.signUp({email,password});
+    if(error){ msg.className='gmsg err'; msg.textContent=authErr(error.message); return; }
+    if(data.session){ msg.className='gmsg ok'; msg.textContent='가입 완료!'; }
+    else { msg.className='gmsg ok'; msg.textContent='확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 로그인하세요. (또는 Supabase에서 Confirm email 끄기)'; }
+  });
+  $('#reCfg2').addEventListener('click',()=>{ localStorage.removeItem(CFG_KEY); renderConfig(); });
+}
+function authErr(m){
+  if(/Invalid login/i.test(m)) return '이메일 또는 비밀번호가 틀렸습니다.';
+  if(/already registered/i.test(m)) return '이미 가입된 이메일입니다. 로그인하세요.';
+  if(/Email not confirmed/i.test(m)) return '이메일 미확인 상태입니다. 메일 확인 또는 Supabase에서 Confirm email을 끄세요.';
+  return m;
+}
+
+/* ---------- 앱 표시 ---------- */
+function showApp(){
+  $('#gate').hidden=true; $('#app').hidden=false; $('#fab').hidden=false; $('#fpanel').hidden=false;
+  $('#meEmail').textContent=USER.email||'(로그인됨)';
+  week = localStorage.getItem(lk('week')) || 'S';
+  level = localStorage.getItem(lk('level')) || 'adv';
+  if(!built){ build(); built=true; }
+  setSync();
+  drain();
+  go(active && active!=='_' ? active : 'push');
+}
+function setSync(){ const d=$('#syncDot'); if(!d) return; d.className='sync'+(online?'':' off'); d.textContent=online?'● 동기화':'● 오프라인'; }
+
+/* ---------- 저장 토스트 ---------- */
+let toastT;
+function toast(kind){ const el=$('#save'); if(!el) return;
+  el.className='save show'+(kind==='err'?' err':kind==='off'?' off':'');
+  el.textContent = kind==='err'?'저장 실패' : kind==='off'?'오프라인 저장됨' : '저장됨';
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1200);
+}
+
+/* ---------- e1RM (고반복 과대추정 방지: 12회로 캡) ---------- */
+function e1rm(w,r){ w=parseFloat(w); r=parseFloat(r); if(!(w>0)||!(r>0)) return null; if(r<=1) return Math.round(w); return Math.round(w*(1+Math.min(r,12)/30)); }
+
+/* ---------- 로컬 캐시 ---------- */
+function cacheKey(d,dt){ return 'pb-cache-'+uid()+'-'+d+'-'+dt; }
+function writeCache(){ try{ localStorage.setItem(cacheKey(date,dayType), JSON.stringify({store,sessionMeta})); }catch(e){} }
+function readCache(d,dt){ try{ return JSON.parse(localStorage.getItem(cacheKey(d,dt))||'null'); }catch(e){ return null; } }
+
+/* ---------- 아웃박스(오프라인 큐) ---------- */
+function getOutbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX)||'[]'); }catch(e){ return []; } }
+function setOutbox(q){ localStorage.setItem(OUTBOX, JSON.stringify(q)); }
+function enqueue(item){ const q=getOutbox(); q.push(item); setOutbox(q); }
+async function drain(){
+  if(!sb||!USER) return;
+  let q=getOutbox(); if(!q.length) return;
+  const rest=[];
+  for(const it of q){
+    try{
+      const id=await ensureSession(it.date,it.dayType,it.week);
+      if(it.kind==='entry') await sb.from('ppl_entries').upsert({...it.payload, session_id:id, user_id:USER.id},{onConflict:'session_id,exercise_key'}).throwOnError();
+      else await sb.from('ppl_sessions').update(it.patch).eq('id',id).throwOnError();
+    }catch(e){ rest.push(it); }
+  }
+  setOutbox(rest);
+  if(rest.length<q.length) toast('saved');
+}
+
+/* ---------- 세션 보장 ---------- */
+async function ensureSession(d,dt,wk){
+  const k=d+'|'+dt; if(sessIds[k]) return sessIds[k];
+  const {data,error}=await sb.from('ppl_sessions')
+    .upsert({user_id:USER.id, session_date:d, day_type:dt, week_block:wk, level_mode:level},{onConflict:'user_id,session_date,day_type'})
+    .select('id').single();
+  if(error) throw error;
+  sessIds[k]=data.id; return data.id;
+}
+
+/* ---------- 날짜별 로드 ---------- */
+async function loadDay(){
+  store={}; sessionMeta={}; bestMap={};
+  const cache=readCache(date,dayType);
+  if(cache){ store=cache.store||{}; sessionMeta=cache.sessionMeta||{}; }
+  render(); // 캐시 우선 렌더
+  if(!sb||!USER){ return; }
+  const dd=date, dt=dayType;
+  try{
+    const {data:s,error:se}=await sb.from('ppl_sessions').select('*')
+      .eq('session_date',dd).eq('day_type',dt).maybeSingle();
+    if(se) throw se;
+    let serverStore={};
+    if(s){ sessIds[dd+'|'+dt]=s.id;
+      const {data:ents,error:ee}=await sb.from('ppl_entries').select('*').eq('session_id',s.id);
+      if(ee) throw ee;
+      (ents||[]).forEach(r=>{ serverStore[r.exercise_key]={w:r.weight_kg??'', r:r.reps??'', rir:r.rir??'', note:r.note||'', name:r.exercise_name||''}; });
+    }
+    // 아웃박스(미전송 편집)를 서버 결과 위에 머지 → 빈값 덮어쓰기 방지
+    const pend=getOutbox().filter(it=>it.date===dd&&it.dayType===dt&&it.kind==='entry');
+    pend.forEach(it=>{ const p=it.payload; serverStore[p.exercise_key]={w:p.weight_kg??'', r:p.reps??'', rir:p.rir??'', note:p.note||'', name:p.exercise_name||''}; });
+    if(dd===date && dt===dayType){
+      store=serverStore;
+      sessionMeta = s ? {id:s.id, condition:s.condition, memo:s.memo||'', bodyweight_kg:s.bodyweight_kg, sleep_hours:s.sleep_hours, is_deload:!!s.is_deload} : {};
+      await loadBest(DAYS[dt].ex.map((_,i)=>dt+'-'+i));
+      writeCache(); render();
+    }
+  }catch(e){ /* 오프라인/오류 → 캐시 유지 */ }
+}
+async function loadBest(keys){
+  try{
+    const {data}=await sb.from('ppl_entries').select('exercise_key,weight_kg,reps').eq('user_id',USER.id).in('exercise_key',keys);
+    const m={}; (data||[]).forEach(r=>{ const e=e1rm(r.weight_kg,r.reps); if(e&&(!m[r.exercise_key]||e>m[r.exercise_key])) m[r.exercise_key]=e; });
+    bestMap=m;
+  }catch(e){}
+}
+
+/* ---------- 쓰기: 종목 ---------- */
+const entryTimers={};
+function collectEntry(key){
+  const o=store[key]||{};
+  return { session_date:date, week_block:week, exercise_key:key,
+    weight_kg:numOrNull(o.w), reps:intOrNull(o.r), rir:intOrNull(o.rir),
+    note:(o.note||'').slice(0,500)||null, exercise_name:(o.name||'').slice(0,120)||null };
+}
+function queueEntry(key){ writeCache(); clearTimeout(entryTimers[key]); entryTimers[key]=setTimeout(()=>flushEntry(key),700); }
+function flushEntryNow(key){ if(entryTimers[key]){ clearTimeout(entryTimers[key]); delete entryTimers[key]; } flushEntry(key); }
+async function flushEntry(key){
+  const snap={date, dayType, week, payload:collectEntry(key)};
+  if(!online){ enqueue({kind:'entry',...snap}); toast('off'); return; }
+  try{
+    const id=await ensureSession(snap.date,snap.dayType,snap.week);
+    const {error}=await sb.from('ppl_entries').upsert({...snap.payload, session_id:id, user_id:USER.id},{onConflict:'session_id,exercise_key'});
+    if(error) throw error;
+    toast('saved');
+    if(snap.date===date && snap.dayType===dayType){ await loadBest(DAYS[dayType].ex.map((_,i)=>dayType+'-'+i)); refreshBestUI(); }
+  }catch(e){ enqueue({kind:'entry',...snap}); toast(/JWT|expired|401|403/i.test(e.message||'')?'err':'off'); }
+}
+
+/* ---------- 쓰기: 세션 메타 ---------- */
+let metaTimers={};
+function queueMeta(patch,key){ Object.assign(sessionMeta,patch); writeCache(); clearTimeout(metaTimers[key]); metaTimers[key]=setTimeout(()=>flushMeta(patch),600); }
+async function flushMeta(patch){
+  const snap={date,dayType,week,patch};
+  if(!online){ enqueue({kind:'session',...snap}); toast('off'); return; }
+  try{
+    const id=await ensureSession(date,dayType,week);
+    const {error}=await sb.from('ppl_sessions').update(patch).eq('id',id);
+    if(error) throw error;
+    toast('saved');
+  }catch(e){ enqueue({kind:'session',...snap}); toast(/JWT|expired|401|403/i.test(e.message||'')?'err':'off'); }
+}
+
+/* ---------- 렌더 ---------- */
+function rx(ex){ if(level==='onb') return week==='S'?'2 × 6–8':'2 × 12–15'; return week==='S'?ex.s:ex.h; }
+function metaLine(){
+  if(level==='onb') return '<b>온보딩 모드</b> · 2세트 · 가볍게 · RIR 3~4 (실패 X) · 기분 좋게 끝내기 · 주 3~4회로 시작 · 피곤하면 보조/코어 1개 생략 OK · 익숙해지면 숙련으로 전환';
+  return week==='S'
+    ? '<b>스트렝스 주</b> · 메인 컴파운드 5×5 · 휴식 3분+ · RIR 1~2 (고립 1~3) · 메인 직후 백오프 1세트(50%, 실패까지)'
+    : '<b>하이퍼트로피 주</b> · 8~15회 · 고립 휴식 짧게(1~1.5분) · RIR 0~2 · 정해진 횟수 채우면 다음에 +무게';
+}
+function setAccent(k){ document.documentElement.style.setProperty('--accent', (DAYS[k]?'var('+DAYS[k].color+')':'var(--push)')); }
+
+function sessionPanel(){
+  const m=sessionMeta||{};
+  return `<div class="spanel">
+    <textarea id="memo" placeholder="오늘 메모 — 컨디션·통증·새 큐·왜 잘됐/안됐는지 (몇 달 뒤 다시 읽게 됩니다)">${esc(m.memo||'')}</textarea>
+    <div class="srow">
+      <label class="sf">체중<input id="sBw" inputmode="decimal" placeholder="kg" value="${esc(m.bodyweight_kg??'')}"></label>
+      <label class="sf">수면<input id="sSleep" inputmode="decimal" placeholder="h" value="${esc(m.sleep_hours??'')}"></label>
+      <span class="dl"><button id="sDeload" class="${m.is_deload?'on':''}">${m.is_deload?'✓ 디로드 주':'디로드 주'}</button></span>
+    </div></div>`;
+}
+function exCard(k,ex,i){
+  const id=k+'-'+i, rec=store[id]||{}, best=bestMap[id]||0, e1=e1rm(rec.w,rec.r);
+  const flag = ex.flag?`<span class="badge">${ex.flag}</span>`:'';
+  const romBadge = ex.rom?`<span class="badge rom">가동범위</span>`:'';
+  const note = ex.fnote?`<div class="flagnote">${ex.fnote}</div>`:'';
+  const romNote = ex.rom?`<div class="romnote"><b>ROM·유연성:</b> ${ex.rom}</div>`:'';
+  const cue = ex.c?`<div class="ex-cue">${ex.c}</div>`:'';
+  return `<div class="ex"><div class="ex-top">
+    <span class="ex-num">${String(i+1).padStart(2,'0')}</span>
+    <div class="ex-main"><div class="ex-name">${ex.n}${flag}${romBadge}</div>${cue}${note}${romNote}</div>
+    <div class="ex-side"><div class="ex-rx">${rx(ex)}</div>
+      ${ex.tempo?`<div class="tempo">⏱ ${/[0-9]/.test(ex.tempo)?'템포 '+ex.tempo:ex.tempo}</div>`:''}
+      <a class="yt" href="https://www.youtube.com/shorts/${ex.yt}" target="_blank" rel="noopener">▶ 영상</a></div>
+    </div>
+    <div class="log">
+      <label>무게 <input data-id="${id}" data-f="w" inputmode="decimal" placeholder="kg" value="${esc(rec.w||'')}"></label>
+      <label>반복 <input data-id="${id}" data-f="r" inputmode="numeric" placeholder="회" value="${esc(rec.r||'')}"></label>
+      <label>RIR <input data-id="${id}" data-f="rir" inputmode="numeric" placeholder="0~5" value="${esc(rec.rir||'')}"></label>
+      <div class="e1rm" data-e="${id}">e1RM <b>${e1?e1+'kg':'—'}</b><span class="best">${best?' · 최고 '+best:''}</span></div>
+    </div>
+    <div class="log" style="border-top:0;padding-top:0;margin-top:6px">
+      <label style="flex:1">메모 <input class="note" data-id="${id}" data-f="note" placeholder="예: 왼어깨 뻐근 / 인클라인 선택" value="${esc(rec.note||'')}"></label>
+    </div></div>`;
+}
+function refreshBestUI(){
+  document.querySelectorAll('.e1rm[data-e]').forEach(el=>{
+    const id=el.dataset.e, rec=store[id]||{}, e1=e1rm(rec.w,rec.r), best=bestMap[id]||0;
+    el.querySelector('b').textContent=e1?e1+'kg':'—';
+    el.querySelector('.best').textContent=best?' · 최고 '+best:'';
+  });
+}
+function warmupBlock(k){
+  const items=WARMUP[k].map(w=>`<div class="wu-row"><div class="wu-main"><div class="wu-n">${w.n}</div><div class="wu-c">${w.c}</div></div><a class="yt" href="${w.u}" target="_blank" rel="noopener">▶ 영상</a></div>`).join('');
+  return `<div class="warm"><div class="warm-h"><span class="badge rom">워밍업</span> 능동 스트레칭 <span class="warm-sub">상호억제 · 각 8~10회 · 반동 X · 동적/능동 5~8분</span></div>
+    <div class="wu-note">${WARMUP_NOTE[k]}</div>${items}
+    <div class="wu-ramp">→ 마무리: 첫 컴파운드를 가벼운 무게로 1~2 램프업 세트 후 본 세트 진입.</div></div>`;
+}
+function renderDay(k){
+  const d=DAYS[k], cur=sessionMeta.condition||0;
+  const emos=[['😣',1],['😐',2],['😀',3]].map(([e,v])=>`<button data-c="${v}" class="${cur===v?'on':''}">${e}</button>`).join('');
+  let h=`<div class="dayhead"><span class="num">${d.name.toUpperCase()}</span><h2>${d.kr}</h2>
+    <div class="cond"><span>오늘 컨디션</span>${emos}</div></div>
+    ${sessionPanel()}
+    ${warmupBlock(k)}
+    <div class="meta">${metaLine()}</div>`;
+  h+=d.ex.map((e,i)=>exCard(k,e,i)).join('');
+  h+=`<div class="cardio"><b>마무리 유산소</b> — Zone 2(편하게 대화 가능한 강도) 10~15분. 회복·심혈관 목적. 60분 안에 종료.</div>`;
+  return h;
+}
+
+/* ---------- 기록(히스토리) 탭 ---------- */
+async function renderHistory(){
+  const main=$('#main');
+  main.innerHTML=`<section class="view"><div class="dayhead"><span class="num">HISTORY</span><h2>기록</h2></div><div id="hlist" class="hempty">불러오는 중…</div></section>`;
+  if(!sb||!USER){ $('#hlist').textContent='로그인이 필요합니다.'; return; }
+  try{
+    const {data,error}=await sb.from('ppl_sessions').select('*').order('session_date',{ascending:false}).limit(90);
+    if(error) throw error;
+    const list=$('#hlist');
+    if(!data||!data.length){ list.className='hempty'; list.textContent='아직 기록이 없습니다. 운동을 입력하면 여기에 날짜별로 쌓입니다.'; return; }
+    const emo={1:'😣',2:'😐',3:'😀'};
+    list.className='';
+    list.innerHTML=data.map(s=>`<div class="hsess" data-d="${esc(s.session_date)}" data-t="${esc(s.day_type)}">
+      <div class="hh"><span class="hd">${esc(s.session_date)} (${weekdayKr(s.session_date)})</span>
+        <span class="ht" style="color:var(${DAYS[s.day_type]?DAYS[s.day_type].color:'--text'})">${DAYS[s.day_type]?DAYS[s.day_type].name:esc(s.day_type)}</span>
+        <span class="hw">${s.week_block==='H'?'하이퍼':'스트렝스'}${s.is_deload?' · 디로드':''}${s.level_mode==='onb'?' · 온보딩':''}</span>
+        <span class="hc">${s.condition?emo[s.condition]:''}</span></div>
+      ${s.memo?`<div class="hmemo">${esc(s.memo)}</div>`:''}</div>`).join('');
+    list.querySelectorAll('.hsess').forEach(el=>el.addEventListener('click',()=>{
+      date=el.dataset.d; setDateInput();
+      go(el.dataset.t);
+    }));
+  }catch(e){ $('#hlist').textContent='불러오기 실패 (오프라인일 수 있음).'; }
+}
+
+/* ---------- 정적 탭(원칙/행동/근거) ---------- */
+function renderPrinciples(){return `
+  <div class="dayhead"><span class="num">NOTES</span><h2>원칙 & 운영</h2></div>
+  <div class="p"><h3>주간 블록 (스트렝스 / 하이퍼트로피)</h3>
+    <p><span class="k">한 주는 스트렝스</span>(메인 5×5·고중량·저볼륨), <span class="k">다음 주는 하이퍼트로피</span>(8~15회·고볼륨)로 번갈아. 두 자질이 서로를 끌어올리고, 스트렝스 주가 고빈도 PPL의 피로를 덜어주는 상대적 디로드 역할도 해. 상단 토글로 전환.</p></div>
+  <div class="p"><h3>실패 근접도 (RIR)</h3>
+    <p>스트렝스 주: 메인 <span class="k">RIR 1~2</span>, 고립 1~3. 하이퍼트로피 주: <span class="k">RIR 0~2</span>(고립 마지막 세트만 실패까지). 숙련은 실패 1~3회 전, 온보딩은 RIR 3~4로 실패 회피. 종목별 RIR 칸에 기록하면 추세 분석에 도움.</p></div>
+  <div class="p"><h3>점진적 과부하 — 두 주 모두</h3>
+    <p>스트렝스 주: 5×5 완수하면 다음에 +무게. 하이퍼트로피 주: <span class="k">횟수 범위 상단을 깔끔히 채우면 +무게.</span> 이게 결과의 엔진.</p></div>
+  <div class="p"><h3>프리웨이트가 뼈대 · 코어는 마무리</h3>
+    <p>컴파운드를 fresh할 때 먼저, 코어(행잉 레그레이즈·팔로프)는 세션 맨 마지막에. 스쿼트·데드 같은 브레이싱 운동 전엔 코어를 지치게 하지 말 것.</p></div>
+  <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">가동범위(ROM) — 늘어난 구간에 부하</h3>
+    <p>풀 ROM이 기본. 핵심은 <span class="k">늘어난(긴 근육 길이) 구간에 확실히 장력</span>을 거는 것 — 종목 카드의 <span class="k">ROM·유연성</span> 메모 참고. 늘어난 위치를 잘 쓰도록 종목 자체를 교체했어: 삼두는 오버헤드(장두 신장), 이두는 인클라인 컬(장두 신장), 레터럴은 케이블/lean-away(바닥 장력 유지), 카프는 바닥 깊은 스트레치+정지.</p></div>
+  <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">길항근 강화로 유연성 — 두 메커니즘</h3>
+    <p><span class="k">① 즉각(신경):</span> 상호억제 — 길항근을 끝범위에서 적극 수축하면 타이트한 주동근이 반사적으로 이완돼 더 깊이 접근. 페이스풀·로우의 끝범위 후인/외회전이 그 역할. 워밍업에 능동 스트레칭으로 활용.</p>
+    <p><span class="k">② 지속(구조):</span> 늘어난 길이에서 <span class="k">느린 편심성(3~4초)</span>이 근섬유를 길게 만들어 능동 가동범위를 확장. RDL·인클라인 프레스·불가리안에서 편심성+깊은 스트레치를 강조. 정적 스트레칭과 달리 그 범위에서 쓸 수 있는 '힘'까지 같이 붙음.</p>
+    <p>주의: ①은 일시적 접근 도구, 길이를 만드는 건 ②. 효과는 늘어난 길이일 때만 나오고 멈추면 가역적이라 꾸준함이 필요. 무릎·힙은 통증 없는 범위 안에서만.</p></div>
+  <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">⏱ 템포 표기 읽는 법</h3>
+    <p>종목 옆 <span class="k">템포 3-1-1</span> = <span class="k">편심(내리기) 3초 – 정지(늘어난·끝범위) 1초 – 동심(올리기) 1초</span>. <span class="k">2-0-1</span>은 통제된 하강·정지 없음, <span class="k">버티기</span>는 등척성, <span class="k">폭발적</span>은 스윙.</p>
+    <p>주의: <span class="k">스트렝스 주 무거운 메인(5×5)</span>은 억지로 느리게 X — 통제된 하강(~2초)으로 부하 유지. 편심성 강조는 하이퍼트로피 주·ROM 종목 위주.</p></div>`;}
+function renderBehavior(){return `
+  <div class="dayhead"><span class="num">SYSTEM</span><h2>행동 & 회복</h2></div>
+  <div class="p"><h3>회사 근처 짐</h3><p>퇴근 후 집으로 가면 정체·안락함의 유혹이 가장 커. 회사 근처 짐으로 직행해 의지력 낭비를 차단.</p></div>
+  <div class="p"><h3>시스템 복원력</h3><p>회식·야근으로 하루 빠져도 자책하지 말고 <span class="k">다음 세션에 즉시 복귀.</span> 시스템은 한 번 이탈로 무너지지 않아 — 즉시 복귀할 때만 유지돼.</p></div>
+  <div class="p"><h3>기분 좋게 끝내기 (특히 와이프)</h3><p>초보를 기어 나가게 만들면 재방문 확률이 떨어져. 에너지가 남은 좋은 지점에서 멈추는 게 장기 습관엔 더 강력해.</p></div>
+  <div class="p"><h3>수면 · 디로드</h3><p>수면 <span class="pill">7~9시간</span>이 회복의 토대. <span class="k">4~6주마다 디로드 주</span>(무게·세트 ~40% 감량)로 피로를 비워. 디로드 주는 세션 상단 <span class="k">디로드 주</span> 버튼으로 표시 — 추세에서 제외돼.</p></div>
+  <div class="p"><h3>일지로 패턴 보기</h3><p>매 세션 <span class="k">컨디션·체중·수면·메모</span>를 남기면, 슬럼프 때 <span class="k">기록</span> 탭에서 본인 패턴(무엇이 좋은 세션을 만들었나)을 되짚을 수 있어.</p></div>`;}
+function renderEvidence(){return `
+  <div class="dayhead"><span class="num">EVIDENCE</span><h2>근거 & 구성 출처</h2></div>
+  <div class="p"><h3>이 루틴은 세 소스를 합쳤어</h3>
+    <p><span class="k">뼈대(PPL 6일·부위 2회·RIR·교정 종목)</span> = 기존 설계. <span class="k">주간 스트렝스/하이퍼트로피 블록·5×5·백오프·데드 큐·컨디션 로깅·행동 설계</span> = 파워빌딩 문서. <span class="k">와이프 입문 모드·기분 좋게 끝내기·수면</span> = 초보 온보딩 문서.</p></div>
+  <div class="p"><h3>빈도: 부위당 주 2회</h3><p>볼륨 동일 시 주 2회 > 1회 근비대(Schoenfeld 메타분석). 6일 PPL이 이를 보장 — 파워빌딩 문서의 주 1회 약점을 보완.</p></div>
+  <div class="p"><h3>주기화</h3><p>선형 vs 비선형은 근비대 사실상 동일(Grgic 2017 메타 d≈−0.02), 근력은 비선형이 약간 우세 가능(Caldas). 주기화는 순응도·진행·정체 회피에 유효.</p></div>
+  <div class="p"><h3>실패 근접도</h3><p>실패에 가까울수록 비대↑이나 0 RIR 불필요·비선형(Robinson 2024). 1~3 RIR로 멈춰도 비대 동일·피로↓(Refalo 2024).</p></div>
+  <div class="p"><h3>파워빌딩 문서에서 의도적으로 뺀 것</h3>
+    <p><span class="cut">· 비하인드 넥 프레스</span> — 어깨 충돌·전방 불안정 위험<br>
+    <span class="cut">· 단일 세션 어깨 20세트</span> — 정크 볼륨(부위당 세션 ~10세트 초과는 비효율)<br>
+    <span class="cut">· 고중량 2분 휴식 고정</span> — 최대근력엔 3분+ 필요<br>
+    <span class="cut">· 부위당 주 1회</span> — PPL 2회로 대체<br>
+    <span class="cut">· "근육 완전 파괴" 프레임</span> — 비대 주동인은 손상이 아니라 기계적 장력</p></div>
+  <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">가동범위 — 늘어난 길이 부하</h3><p>전체적으론 풀 ROM이 약간 유리(차이 사소~작음, Wolf 2023)하지만, <span class="k">긴 근육 길이의 부분반복은 풀 ROM과 최소한 동등하거나 약간의 비대 이점</span>(Wolf 2023·2024/25). 삼두는 오버헤드(장두 신장)가 중립보다 비대 큼. 늘어난 위치 부하가 핵심.</p></div>
+  <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">길항근 훈련 → 유연성</h3><p><span class="k">상호억제(신경·즉각):</span> 길항근 수축 → 타이트한 주동근 반사적 이완(능동/PNF 스트레칭 원리). <span class="k">근력 훈련(구조·지속):</span> 풀 ROM 근력 훈련은 스트레칭과 비슷하게 ROM을 늘리고 근력까지 추가. 늘어난 길이의 편심성은 근섬유 길이(직렬 근절)를 늘려 능동 가동범위 확장(NHE 9주: 근섬유 +19~33%) — 단 늘어난 길이일 때만, 가역적.</p>
+    <p class="src">참고: Wolf et al.(2023, ROM 메타); 늘어난 구간 부분반복(Wolf 2024/25, Pedrosa 2022); 근력 vs 스트레칭 ROM(Afonso 2021 메타·RCT 2024); 편심성 근섬유 길이(Franchi·NHE 연구). e1RM은 고반복에서 부정확해 12회로 캡한 추정치. 일반 가이드이며 개인 상태에 맞춰 조정.</p></div>`;}
+
+const TABS=[['push','Push'],['pull','Pull'],['legs','Legs'],['history','기록'],['principles','원칙'],['behavior','행동·회복'],['evidence','근거']];
+function build(){
+  $('#tabs').innerHTML = TABS.map(([k,l])=>`<button class="tab" data-go="${k}">${l}</button>`).join('');
+  $('#tabs').addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b) go(b.dataset.go); });
+  $('#weekSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-week]'); if(b){ week=b.dataset.week; localStorage.setItem(lk('week'),week); render(); }});
+  $('#lvlSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-lvl]'); if(b){ level=b.dataset.lvl; localStorage.setItem(lk('level'),level); render(); }});
+  // 날짜 네비
+  $('#dPrev').addEventListener('click',()=>{ date=shiftDate(date,-1); setDateInput(); if(isDay()) loadDay(); else render(); });
+  $('#dNext').addEventListener('click',()=>{ date=shiftDate(date, 1); setDateInput(); if(isDay()) loadDay(); else render(); });
+  $('#dToday').addEventListener('click',()=>{ date=kstToday(); setDateInput(); if(isDay()) loadDay(); else render(); });
+  $('#dInput').addEventListener('change',e=>{ if(e.target.value){ date=e.target.value; setDateInput(); if(isDay()) loadDay(); else render(); }});
+  $('#logout').addEventListener('click', async ()=>{ await sb.auth.signOut(); sessIds={}; store={}; sessionMeta={}; bestMap={}; });
+  setDateInput();
+  // main 위임 핸들러
+  const main=$('#main');
+  main.addEventListener('input',e=>{
+    const t=e.target;
+    if(t.matches('.log input')){ const id=t.dataset.id, f=t.dataset.f; (store[id]=store[id]||{})[f]=t.value;
+      if(f==='w'||f==='r'){ const card=t.closest('.ex'); const el=card&&card.querySelector('.e1rm b'); if(el){ const e1=e1rm(store[id].w,store[id].r); el.textContent=e1?e1+'kg':'—'; } }
+      queueEntry(id);
+    } else if(t.id==='memo'){ queueMeta({memo:t.value.slice(0,2000)},'memo'); }
+  });
+  main.addEventListener('change',e=>{
+    const t=e.target;
+    if(t.id==='sBw'){ queueMeta({bodyweight_kg:numOrNull(t.value)},'bw'); }
+    else if(t.id==='sSleep'){ queueMeta({sleep_hours:numOrNull(t.value)},'sleep'); }
+  });
+  main.addEventListener('blur',e=>{ if(e.target.matches('.log input')) flushEntryNow(e.target.dataset.id); }, true);
+  main.addEventListener('click',e=>{
+    const c=e.target.closest('.cond [data-c]');
+    if(c){ const v=parseInt(c.dataset.c,10); sessionMeta.condition = (sessionMeta.condition===v?null:v); queueMeta({condition:sessionMeta.condition},'cond'); render(); return; }
+    const dl=e.target.closest('#sDeload');
+    if(dl){ sessionMeta.is_deload=!sessionMeta.is_deload; queueMeta({is_deload:sessionMeta.is_deload},'deload'); render(); return; }
+  });
+  initTools();
+}
+function isDay(){ return active==='push'||active==='pull'||active==='legs'; }
+function setDateInput(){ const i=$('#dInput'); if(i) i.value=date; const w=$('#dWeekday'); if(w) w.textContent=weekdayKr(date)+'요일'+(date===kstToday()?' · 오늘':''); }
+function go(k){ active=k; if(isDay()){ dayType=k; setAccent(k); loadDay(); } else { setAccent('push'); render(); } window.scrollTo({top:0,behavior:'smooth'}); }
+function render(){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.go===active));
+  document.querySelectorAll('#weekSeg button').forEach(b=>b.classList.toggle('on',b.dataset.week===week));
+  document.querySelectorAll('#lvlSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lvl===level));
+  $('#datebar').style.display = isDay() ? 'flex' : 'none';
+  if(active==='history'){ renderHistory(); return; }
+  const body = active==='principles'?renderPrinciples() : active==='behavior'?renderBehavior() : active==='evidence'?renderEvidence() : renderDay(active);
+  $('#main').innerHTML = `<section class="view">${body}</section>`;
+}
+
+/* ---------- 휴식 타이머 (벽시계 기반) ---------- */
+let tDur=90, tLeft=90, tRun=false, tInt=null, tEnd=0, setCount=0, ac=null;
+function fmt(s){ const m=Math.floor(s/60), x=s%60; return m+':'+String(x).padStart(2,'0'); }
+function tRender(){ const el=$('#fpTime'); if(!el) return; el.textContent=fmt(Math.max(0,tLeft)); el.classList.toggle('done', tLeft<=0 && tRun===false && tDur>0 && tEndedOnce); }
+let tEndedOnce=false;
+function beep(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(),g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=880; g.gain.value=0.001; o.start(); g.gain.exponentialRampToValueAtTime(0.3, ac.currentTime+0.02); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+0.5); o.stop(ac.currentTime+0.52); }catch(e){} }
+function tStop(){ tRun=false; clearInterval(tInt); tInt=null; const b=$('#fpToggle'); if(b) b.textContent='시작'; }
+function tSet(s){ tStop(); tDur=s; tLeft=s; tEndedOnce=false; tRender(); }
+function tTick(){ tLeft=Math.max(0, Math.round((tEnd-Date.now())/1000)); tRender(); if(tLeft<=0){ tStop(); tEndedOnce=true; tRender(); beep(); if(navigator.vibrate) navigator.vibrate([200,100,200]); } }
+function tToggle(){ if(tRun){ tStop(); } else { if(tLeft<=0) tLeft=tDur; tEnd=Date.now()+tLeft*1000; tRun=true; tEndedOnce=false; $('#fpToggle').textContent='일시정지'; clearInterval(tInt); tInt=setInterval(tTick,250); tRender(); } }
+function tAdj(d){ tDur=Math.max(0,tDur+d); tLeft=Math.max(0,tLeft+d); if(tRun) tEnd=Date.now()+tLeft*1000; tRender(); }
+function setRender(){ const el=$('#setN'); if(el) el.textContent=setCount; }
+function initTools(){
+  $('#fab').addEventListener('click',()=>$('#fpanel').classList.toggle('open'));
+  document.querySelectorAll('#fpanel [data-set]').forEach(b=>b.addEventListener('click',()=>tSet(parseInt(b.dataset.set,10))));
+  document.querySelectorAll('#fpanel [data-adj]').forEach(b=>b.addEventListener('click',()=>tAdj(parseInt(b.dataset.adj,10))));
+  $('#fpToggle').addEventListener('click',tToggle);
+  $('#fpReset').addEventListener('click',()=>tSet(tDur));
+  $('#setMinus').addEventListener('click',()=>{ setCount=Math.max(0,setCount-1); setRender(); });
+  $('#setPlus').addEventListener('click',()=>{ setCount++; setRender(); });
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden && tRun) tTick(); });
+  tRender(); setRender();
+}
+
+boot();
+</script>
+</body>
+</html>
