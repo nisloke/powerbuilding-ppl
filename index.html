@@ -385,8 +385,8 @@ function renderAuth(){
     <p class="h">각자 본인 계정으로 로그인하면 본인 기록만 보입니다.</p>
     <label class="field"><span>이메일</span><input id="auEmail" type="email" autocomplete="username" placeholder="you@example.com"></label>
     <label class="field"><span>비밀번호</span><input id="auPw" type="password" autocomplete="current-password" placeholder="6자 이상"></label>
-    <div class=”grow”><button class=”gbtn” id=”auLogin”>로그인</button><button class=”gbtn alt” id=”auSignup”>회원가입</button></div>
-    <div class=”gmsg” id=”auMsg”></div>`;
+    <div class="grow"><button class="gbtn" id="auLogin">로그인</button><button class="gbtn alt" id="auSignup">회원가입</button></div>
+    <div class="gmsg" id="auMsg"></div>`;
   const msg=$('#auMsg');
   const getv=()=>({email:$('#auEmail').value.trim(), password:$('#auPw').value});
   $('#auLogin').addEventListener('click', async ()=>{
