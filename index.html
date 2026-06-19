@@ -136,6 +136,12 @@
   .e1rm{margin-left:auto;font-size:11.5px;color:var(--muted);font-family:var(--mono);background:var(--panel2);border-radius:7px;padding:6px 10px;white-space:nowrap}
   .e1rm b{color:var(--rom);font-size:13.5px}
   .e1rm .best{color:var(--faint)}
+  .lastrec{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-family:var(--mono)}
+  .lastrec b{color:var(--text);font-size:12.5px}
+  .lastrec.alt{opacity:.9} .lastrec.none{color:var(--faint);font-family:var(--sans)}
+  .lastrec .altn{color:var(--flag)}
+  .lastfill{margin-left:auto;background:var(--bg);border:1px solid var(--line);color:var(--accent);border-radius:6px;padding:4px 9px;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .lastfill:hover{border-color:var(--accent)} .lastfill:active{transform:scale(.95)}
 
   .cardio{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--panel2);font-size:13px;color:var(--muted)}
   .cardio b{color:var(--text)}
@@ -324,6 +330,7 @@ const DAYS = {
     {n:'불가리안 스플릿 스쿼트', s:'3 × 6–8 / 측', h:'3 × 10–12 / 측', tempo:'3-1-1', yt:'or1frhkjBDc', flag:FLAG, fnote:'한다리. 상체 약간 앞으로(힙힌지) → 후면 힙 드라이브, 무릎 전방이동 최소화.', rom:'앞다리 깊은 굴곡으로 둔근 늘어난 위치 부하 + 편심성 통제. 뒷다리 고관절 굴곡근 스트레치도 동반.'},
     {n:'케틀벨 스윙', s:'4 × 8–10', h:'3 × 15–20', tempo:'폭발적', yt:'n1df4ASFeZU', flag:FLAG, fnote:'후면 힙 드라이브 폭발력. 힙으로 던지고 팔은 줄. 스쿼트 아님.'},
     {n:'티비알리스 + 카프 레이즈', s:'각 3 × 12–15', h:'각 3 × 15–20', tempo:'2-2-1', yt:'e29hIc-OC84', flag:FLAG, fnote:'정강이 강화로 발목 도르시플렉션 확보·무릎 전방이동 억제. (티비알리스 = 카프의 직접 길항근)', rom:'카프는 발뒤꿈치를 <b>깊이 떨어뜨려 바닥 스트레치 1~2초 정지</b> — 종아리 늘어난 구간 반응 큼. 발목 ROM 확보.'},
+    {n:'노르딕 햄스트링 컬', s:'3 × 4–6', h:'3 × 6–8', tempo:'4-0-1', yt:'', flag:'강도 주의', fnote:'편심성(내려가기) 중심 보조. 무릎 꿇고 발목 고정(파트너·기구·소파/바벨 밑). 상체~무릎 일직선 유지하며 최대한 천천히(4~5초) 버티며 내려가고, 더 못 버티면 손으로 받친 뒤 손으로 밀어 올라옴. 어려우면 밴드 보조·상단 부분 가동범위·수건 슬라이드부터.', rom:'<b>무릎이 거의 펴지는 하단에서 햄스트링이 가장 길게 늘어남 — 그 구간까지 편심성으로 버티기.</b> RDL(고관절 지배)이 못 채우는 무릎-지배 편심 자극. 근섬유 길이↑ → 햄스트링 유연성·부상예방. 케틀벨 스윙과 함께 후면사슬 보완.'},
   ]},
 };
 const SHOULDER_WU=[
@@ -345,7 +352,7 @@ const WARMUP_NOTE={
 
 /* ---------- 상태 ---------- */
 let app=null, auth=null, db=null, USER=null, built=false, online=navigator.onLine;
-let store={}, sessionMeta={}, bestMap={};
+let store={}, sessionMeta={}, bestMap={}, lastMap={};
 let active='push', dayType='push', date=kstToday();
 let week='S', level='adv';
 function uid(){ return USER ? USER.uid : 'anon'; }
@@ -450,12 +457,12 @@ function sref(d, dt){ return doc(db, 'users', USER.uid, 'sessions', d+'_'+dt); }
 
 /* ---------- 날짜별 로드 ---------- */
 async function loadDay(){
-  store={}; sessionMeta={}; bestMap={};
+  store={}; sessionMeta={}; bestMap={}; lastMap={};
   render();
   if(!db || !USER) return;
   const dd=date, dt=dayType;
   try{
-    const snap = await getDoc(sref(dd, dt));
+    const [snap] = await Promise.all([ getDoc(sref(dd, dt)), loadBest() ]);
     if(dd!==date || dt!==dayType) return;
     if(snap.exists()){
       const d=snap.data();
@@ -463,17 +470,24 @@ async function loadDay(){
       sessionMeta = { condition:(d.condition??null), memo:(d.memo||''), bodyweight_kg:(d.bodyweight_kg??''), sleep_hours:(d.sleep_hours??''), is_deload:!!d.is_deload };
     } else { store={}; sessionMeta={}; }
     render();
-    await loadBest(); refreshBestUI();
   }catch(e){ /* 오프라인/오류 → 현재 화면 유지(Firestore 캐시) */ }
 }
 async function loadBest(){
-  bestMap={};
+  bestMap={}; lastMap={};
   if(!db || !USER) return;
   try{
     const qs = await getDocs(query(collection(db,'users',USER.uid,'sessions'), where('dayType','==',dayType)));
+    const docs=[]; qs.forEach(s=>docs.push(s.data()));
     const m={};
-    qs.forEach(s=>{ const ents=(s.data().entries)||{}; for(const k in ents){ const e=e1rm(ents[k].w, ents[k].r); if(e && (!m[k]||e>m[k])) m[k]=e; } });
+    for(const d of docs){ const ents=d.entries||{}; for(const k in ents){ const e=e1rm(ents[k].w, ents[k].r); if(e && (!m[k]||e>m[k])) m[k]=e; } }
     bestMap=m;
+    // 지난 기록: 현재 날짜 이전 세션을 최신순으로, 종목별·블록별(S/H) 가장 최근 1건
+    const prior=docs.filter(d=>d.date && d.date < date).sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
+    const lm={};
+    for(const d of prior){ const blk=(d.week_block==='H')?'H':'S'; const ents=d.entries||{};
+      for(const k in ents){ const e=ents[k]; if(!e||!(e.w||e.r)) continue;
+        if(!lm[k]) lm[k]={}; if(!lm[k][blk]) lm[k][blk]={ w:e.w, r:e.r, rir:e.rir, date:d.date }; } }
+    lastMap=lm;
   }catch(e){}
 }
 
@@ -520,7 +534,7 @@ function setAccent(k){ document.documentElement.style.setProperty('--accent', (D
 const PLAN = {
   push: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },
   pull: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },
-  legs: { main:[0,1], ss:[['A',[2,3]]], solo:[4] },
+  legs: { main:[0,1], ss:[['A',[2,3]]], solo:[5,4], order:[0,1,2,3,5,4] },
 };
 function exTier(k,i){ const p=PLAN[k]; if(!p) return 'main';
   if(p.main.includes(i)) return 'main';
@@ -530,14 +544,15 @@ function restMainSec(){ return week==='S'?180:150; }
 function ssRestSec(){ return week==='S'?75:60; }
 function soloRestSec(){ return 75; }
 function exercisesHtml(k){
-  const ex=DAYS[k].ex; let out=''; let i=0;
-  while(i<ex.length){
-    const t=exTier(k,i);
+  const ex=DAYS[k].ex; const order=(PLAN[k]&&PLAN[k].order)||ex.map((_,n)=>n);
+  let out=''; let p=0, num=0;
+  while(p<order.length){
+    const i=order[p]; const t=exTier(k,i);
     if(t.indexOf('ss:')===0){
       const lab=t.slice(3); const g=[];
-      while(i<ex.length && exTier(k,i)==='ss:'+lab){ g.push(i); i++; }
-      out+=`<div class="ssgroup"><div class="ss-h">🔗 슈퍼세트 ${lab}<span>두 종목 번갈아 1세트씩 · 종목 사이엔 쉬지 말고 · 라운드 끝에만 휴식</span><button class="restbtn" data-rest="${ssRestSec()}">⏱ 라운드 ${ssRestSec()}s</button></div>${g.map(idx=>exCard(k,ex[idx],idx)).join('')}</div>`;
-    } else { out+=exCard(k,ex[i],i); i++; }
+      while(p<order.length && exTier(k,order[p])==='ss:'+lab){ g.push(order[p]); p++; }
+      out+=`<div class="ssgroup"><div class="ss-h">🔗 슈퍼세트 ${lab}<span>두 종목 번갈아 1세트씩 · 종목 사이엔 쉬지 말고 · 라운드 끝에만 휴식</span><button class="restbtn" data-rest="${ssRestSec()}">⏱ 라운드 ${ssRestSec()}s</button></div>${g.map(idx=>exCard(k,ex[idx],idx,++num)).join('')}</div>`;
+    } else { out+=exCard(k,ex[i],i,++num); p++; }
   }
   return out;
 }
@@ -552,7 +567,7 @@ function sessionPanel(){
       <span class="dl"><button id="sDeload" class="${m.is_deload?'on':''}">${m.is_deload?'✓ 디로드 주':'디로드 주'}</button></span>
     </div></div>`;
 }
-function exCard(k,ex,i){
+function exCard(k,ex,i,num){
   const id=k+'-'+i, rec=store[id]||{}, best=bestMap[id]||0, e1=e1rm(rec.w,rec.r);
   const _t=exTier(k,i);
   const restBadge = _t==='main' ? `<button class="restbtn" data-rest="${restMainSec()}">⏱ 휴식 ${restMainSec()}s</button>`
@@ -562,14 +577,21 @@ function exCard(k,ex,i){
   const note = ex.fnote?`<div class="flagnote">${ex.fnote}</div>`:'';
   const romNote = ex.rom?`<div class="romnote"><b>ROM·유연성:</b> ${ex.rom}</div>`:'';
   const cue = ex.c?`<div class="ex-cue">${ex.c}</div>`:'';
+  let lp=null, lpBlk=null, lpSame=false;
+  if(lastMap[id]){ if(lastMap[id][week]){ lp=lastMap[id][week]; lpBlk=week; lpSame=true; }
+    else { const ob=week==='S'?'H':'S'; if(lastMap[id][ob]){ lp=lastMap[id][ob]; lpBlk=ob; } } }
+  const lastRec = lp
+    ? `<div class="lastrec${lpSame?'':' alt'}">지난 ${lpBlk==='S'?'스트렝스':'하이퍼'}${lp.date?' · '+esc(lp.date.slice(5).replace('-','/')):''} · <b>${esc(lp.w||'?')}kg × ${esc(lp.r||'?')}회</b>${(lp.rir!==''&&lp.rir!=null)?' · RIR '+esc(lp.rir):''}${lpSame?'':' <span class="altn">(다른 블록)</span>'}<button class="lastfill" data-id="${id}">지난값 ⤵</button></div>`
+    : `<div class="lastrec none">이 종목 첫 기록 — 오늘이 기준점</div>`;
   return `<div class="ex"><div class="ex-top">
-    <span class="ex-num">${String(i+1).padStart(2,'0')}</span>
+    <span class="ex-num">${String(num||i+1).padStart(2,'0')}</span>
     <div class="ex-main"><div class="ex-name">${ex.n}${flag}${romBadge}</div>${cue}${note}${romNote}</div>
     <div class="ex-side"><div class="ex-rx">${rx(ex)}</div>
       ${ex.tempo?`<div class="tempo">⏱ ${/[0-9]/.test(ex.tempo)?'템포 '+ex.tempo:ex.tempo}</div>`:''}
       ${restBadge}
-      <a class="yt" href="https://www.youtube.com/shorts/${ex.yt}" target="_blank" rel="noopener">▶ 영상</a></div>
+      <a class="yt" href="${ex.yt?('https://www.youtube.com/shorts/'+ex.yt):('https://www.youtube.com/results?search_query='+encodeURIComponent(ex.n+' 자세'))}" target="_blank" rel="noopener">▶ 영상</a></div>
     </div>
+    ${lastRec}
     <div class="log">
       <label>무게 <input data-id="${id}" data-f="w" inputmode="decimal" placeholder="kg" value="${esc(rec.w||'')}"></label>
       <label>반복 <input data-id="${id}" data-f="r" inputmode="numeric" placeholder="회" value="${esc(rec.r||'')}"></label>
@@ -707,6 +729,15 @@ function build(){
   main.addEventListener('click',e=>{
     const rb=e.target.closest('.restbtn');
     if(rb){ const sec=parseInt(rb.dataset.rest,10)||90; tSet(sec); const fp=$('#fpanel'); if(fp) fp.classList.add('open'); tToggle(); return; }
+    const lf=e.target.closest('.lastfill');
+    if(lf){ const id=lf.dataset.id, lm=lastMap[id]; if(lm){ const lp=lm[week]||lm[week==='S'?'H':'S'];
+      if(lp){ const card=lf.closest('.ex');
+        store[id]=store[id]||{};
+        const setF=(f,v)=>{ const el=card&&card.querySelector(".log input[data-f='"+f+"']"); const val=(v==null?'':String(v)); if(el) el.value=val; store[id][f]=val; };
+        setF('w',lp.w); setF('r',lp.r); setF('rir',lp.rir);
+        const e1El=card&&card.querySelector('.e1rm b'); if(e1El){ const e1=e1rm(store[id].w,store[id].r); e1El.textContent=e1?e1+'kg':'—'; }
+        queueEntry(id);
+      } } return; }
     const c=e.target.closest('.cond [data-c]');
     if(c){ const v=parseInt(c.dataset.c,10); sessionMeta.condition = (sessionMeta.condition===v?null:v); queueMeta({condition:sessionMeta.condition},'cond'); render(); return; }
     const dl=e.target.closest('#sDeload');
