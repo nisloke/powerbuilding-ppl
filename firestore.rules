@@ -1,10 +1,16 @@
 rules_version = '2';
 // PPL 일지 — 각 사용자는 본인 데이터(users/{uid}/...)만 읽기/쓰기 가능.
+// + 허용 이메일 화이트리스트(클라 ALLOW 배열과 동일하게 유지). 화이트리스트 밖 구글계정은
+//   본인 문서라도 쓰기 거부 → 쿼터 스팸 방지. ※ 이 목록은 index.html의 ALLOW(약 298행)와 반드시 동기화.
 // Firebase 콘솔 → Firestore Database → 규칙(Rules) 탭에 붙여넣고 "게시(Publish)".
 service cloud.firestore {
   match /databases/{database}/documents {
+    function allowed() {
+      return request.auth != null
+        && request.auth.token.email.lower() in ['nisloke@gmail.com', 'i.am.awesome.rk@gmail.com'];
+    }
     match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if allowed() && request.auth.uid == uid;
     }
   }
 }
