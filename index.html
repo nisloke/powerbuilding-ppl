@@ -670,7 +670,7 @@ function refreshBestUI(){
   });
 }
 function warmupBlock(k){
-  const items=WARMUP[k].map(w=>`<div class="wu-row"><div class="wu-main"><div class="wu-n">${w.n}</div><div class="wu-c">${w.c}</div></div><a class="yt" href="${vidHref(w)}" target="_blank" rel="noopener">▶ 영상</a></div>`).join('');
+  const items=WARMUP[k].map(w=>`<div class="wu-row"><div class="wu-main"><div class="wu-n">${w.n}</div><div class="wu-c">${w.c}</div></div></div>`).join('');
   return `<div class="warm"><div class="warm-h"><span class="badge rom">워밍업</span> 동적 워밍업 <span class="warm-sub">Raise → WGS → 타깃 활성화 · 약 6~8분</span></div>
     <div class="wu-note">${WARMUP_NOTE[k]}</div>${items}
     <div class="wu-ramp">→ <b>램프업</b>: 첫 컴파운드는 <b>무게↑·횟수↓</b>로 본세트까지 (예 빈봉×8 → 40%×5 → 60%×3 → 80%×1~2 → 본세트, 3~5세트). 가벼운 세트는 원판 갈며 빠르게, 본세트 직전만 1.5~2분 휴식. <b>둘째 메인은 1~2점프</b>만, 보조는 가벼운 1세트면 충분.</div></div>`;
