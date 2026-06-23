@@ -317,7 +317,7 @@ const FLAG='무릎·힙', FLAGP='자세 교정', FLAGC='코어·마무리';
 const DAYS = {
   push:{name:'Push',kr:'가슴 · 어깨 · 삼두',color:'--push',ex:[
     {id:'bench_flat', vid:'7jDS4VQc43k', n:'바벨 벤치프레스 (플랫)', muscle:'chest', slot:'가슴(중하부)', pattern:'press', s:'5 × 5 (+백오프 1)', h:'4 × 8–12', tempo:'2-0-1', sq:'bench press', c:'견갑 후인·하강. 바는 가슴 하부(젖꼭지 라인), 전완 수직. 대흉근 전체·중하부 메인.', rom:'풀 ROM — 바를 가슴까지 깊이, 깊이 컷 금지. 늘어난 바닥 구간이 자극·길이 확보의 핵심.'},
-    {id:'ohp', vid:'VWFoCFyZ7Z4', n:'오버헤드 프레스 (바벨)', muscle:'shoulder', slot:'어깨(전면)', pattern:'press', s:'5 × 5', h:'3 × 8–12', tempo:'2-0-1', sq:'overhead press', c:'갈비뼈(흉곽) 닫아 허리 과신전 방지. 견갑은 위로 회전(고정 X). 덤벨로 대체 가능.'},
+    {id:'ohp', vid:'VWFoCFyZ7Z4', n:'오버헤드 프레스 (바벨)', muscle:'shoulder', slot:'어깨(전면)', pattern:'press', s:'4 × 5', h:'3 × 8–12', tempo:'2-0-1', sq:'overhead press', c:'갈비뼈(흉곽) 닫아 허리 과신전 방지. 견갑은 위로 회전(고정 X). 덤벨로 대체 가능.'},
     {id:'incline_db', vid:'JgP9JJnmsjc', n:'인클라인 덤벨 프레스', muscle:'chest', slot:'가슴(상부)', pattern:'press', s:'3 × 6–8', h:'3 × 10–15', tempo:'3-1-1', sq:'incline dumbbell press', c:'윗가슴(쇄골두) — 인클라인 ~30도. 딥으로 대체 가능(앞으로 기울여 하부 가슴).', rom:'늘어난 위치 부하 — 바닥에서 가슴 깊게 스트레치 + <b>편심성 3~4초</b>. 가슴(내회전 타이트) 길이 확보. 스미스보다 덤벨이 스트레치 깊이 유리.'},
     {id:'lateral_raise', vid:'2pb0rbxV62U', n:'사이드 레터럴 레이즈 (케이블)', muscle:'side_delt', slot:'어깨(측면)', pattern:'isolation', s:'3 × 10–12', h:'4 × 15–20', tempo:'2-1-1', sq:'lateral raise', c:'가볍게·반동 X. 고립이라 마지막 세트만 실패 OK.', rom:'바닥(늘어난 구간)에 장력 유지 — 일반 덤벨은 바닥 장력 0. <b>케이블/몸 기울여</b> 측면 삼각근 늘어난 구간 부하.'},
     {id:'tri_overhead', vid:'J565P8FzJXA', n:'오버헤드 삼두 익스텐션', muscle:'triceps', slot:'삼두', pattern:'isolation', s:'3 × 8–10', h:'3 × 12–20', tempo:'3-1-1', sq:'overhead triceps extension', c:'보조. 팔꿈치 옆 고정, 끝까지 펴기. 푸시다운으로 대체 가능.', rom:'머리 위 자세 = <b>장두 늘어난 구간</b> → 푸시다운보다 비대 큼. 깊은 신전에서 스트레치.'},
@@ -568,7 +568,7 @@ function rx(ex){ if(level==='onb') return week==='S'?'2 × 6–8':'2 × 12–15'
 function metaLine(){
   if(level==='onb') return '<b>온보딩 모드</b> · 2세트 · 가볍게 · RIR 3~4 (실패 X) · 기분 좋게 끝내기 · 주 3~4회로 시작 · 피곤하면 보조/코어 1개 생략 OK · 익숙해지면 숙련으로 전환';
   return week==='S'
-    ? '<b>스트렝스 주</b> · 메인 컴파운드 5×5 · <b>메인만</b> 휴식 3분+(직렬) · RIR 1~2 (고립 1~3) · 메인 직후 백오프 1세트(50%, 실패까지) · 보조는 슈퍼세트/짧은 휴식으로 묶어 <b>60분 내</b> 마무리'
+    ? '<b>스트렝스 주</b> · 메인 5×5(둘째 메인 4세트) · <b>메인 휴식 2.5분</b>(직렬) · RIR 1~2 (고립 1~3) · 메인 직후 백오프 1세트(50%, 실패까지) · 보조는 슈퍼세트/짧은 휴식으로 묶어 <b>60분 내</b> · 카프는 메인 휴식 중에 끼우면 시간 절약'
     : '<b>하이퍼트로피 주</b> · 8~15회 · 고립 휴식 짧게(1~1.5분) · RIR 0~2 · 정해진 횟수 채우면 다음에 +무게 · 슈퍼세트 활용 60분 내';
 }
 function setAccent(k){ document.documentElement.style.setProperty('--accent', (DAYS[k]?'var('+DAYS[k].color+')':'var(--push)')); }
@@ -584,7 +584,7 @@ function exTier(k,i){ const p=PLAN[k]; if(!p) return 'main';
   if(p.main.includes(i)) return 'main';
   for(const [lab,arr] of p.ss){ if(arr.includes(i)) return 'ss:'+lab; }
   return 'solo'; }
-function restMainSec(){ return week==='S'?180:150; }
+function restMainSec(){ return 150; } /* 메인 휴식 2.5분(스트렝스·하이퍼 공통) */
 function ssRestSec(){ return week==='S'?75:60; }
 function soloRestSec(){ return 75; }
 /* 과거 기록 키 정규화: dayType-인덱스(레거시) → stable id (LEGACY_MAP·name 폴백, 비파괴 읽기 전용) */
