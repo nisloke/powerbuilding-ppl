@@ -337,7 +337,7 @@ const DAYS = {
     {id:'bss', vid:'Cow3ESXmrTU', n:'불가리안 스플릿 스쿼트', muscle:'quads_glute', slot:'한다리', pattern:'lunge', s:'3 × 6–8 / 측', h:'3 × 10–12 / 측', tempo:'3-1-1', sq:'bulgarian split squat', flag:FLAG, fnote:'한다리. 상체 약간 앞으로(힙힌지) → 후면 힙 드라이브, 무릎 전방이동 최소화. systemic 부하 큼 → 단독 수행·충분한 휴식.', rom:'앞다리 깊은 굴곡으로 둔근 늘어난 위치 부하 + 편심성 통제. 뒷다리 고관절 굴곡근 스트레치도 동반.'},
     {id:'kb_swing', vid:'n1df4ASFeZU', n:'케틀벨 스윙', muscle:'posterior_chain', slot:'힌지(폭발)', pattern:'hinge', s:'4 × 8–10', h:'3 × 15–20', tempo:'폭발적', sq:'kettlebell swing', flag:FLAG, fnote:'후면 힙 드라이브 폭발력. 힙으로 던지고 팔은 줄. 스쿼트 아님. 호흡 부하 큼 → 단독 수행.'},
     {id:'tibialis_calf', vid:'wdOkFomQNp8', n:'티비알리스 + 카프 레이즈', muscle:'calf', slot:'종아리·정강이', pattern:'isolation', s:'각 3 × 12–15', h:'각 3 × 15–20', tempo:'2-2-1', sq:'calf raise', flag:FLAG, fnote:'정강이 강화로 발목 도르시플렉션 확보·무릎 전방이동 억제. (티비알리스 = 카프의 직접 길항근)', rom:'카프는 발뒤꿈치를 <b>깊이 떨어뜨려 바닥 스트레치 1~2초 정지</b> — 종아리 늘어난 구간 반응 큼. 발목 ROM 확보.'},
-    {id:'nordic', vid:'EnZZIaPCb8k', n:'노르딕 햄스트링 컬', muscle:'hamstring_knee', slot:'햄(무릎굴곡)', pattern:'isolation', s:'3 × 4–6', h:'3 × 6–8', tempo:'4-0-1', sq:'nordic hamstring curl', flag:'강도 주의', fnote:'편심성(내려가기) 중심 보조. 무릎 꿇고 발목 고정(파트너·기구·소파/바벨 밑). 상체~무릎 일직선 유지하며 최대한 천천히(4~5초) 버티며 내려가고, 더 못 버티면 손으로 받친 뒤 손으로 밀어 올라옴. 어려우면 밴드 보조·상단 부분 가동범위·수건 슬라이드부터.', rom:'<b>무릎이 거의 펴지는 하단에서 햄스트링이 가장 길게 늘어남 — 그 구간까지 편심성으로 버티기.</b> RDL(고관절 지배)이 못 채우는 무릎-지배 편심 자극. 근섬유 길이↑ → 햄스트링 유연성·부상예방.'},
+    {id:'nordic', vid:'EnZZIaPCb8k', n:'노르딕 햄스트링 컬 (인클라인 벤치)', muscle:'hamstring_knee', slot:'햄(무릎굴곡)', pattern:'isolation', s:'3 × 4–6', h:'3 × 6–8', tempo:'4-0-1', sq:'nordic hamstring curl', flag:'강도 주의', fnote:'<b>인클라인 벤치 추천</b>(맨바닥보다 쉬움): 발목 고정, 패드가 무릎에 오게 하고 경사에서 시작해 <b>무릎에서만</b> 굽혔다 편다. 핵심 큐 = <b>무릎–고관절–어깨 일직선·둔근 꽉 조여 엉덩이 고정</b>. ⚠️ 엉덩이가 접히는 힙힌지가 되면 둔근·허리 운동이 되어 효과가 사라짐(같은 부위 자극 X). 익숙해지면 경사를 낮춰 난이도↑. 더 못 버티면 손으로 받쳐 보조.', rom:'<b>무릎이 거의 펴지는 하단에서 햄스트링이 가장 길게 늘어남 — 그 구간까지 편심성으로 버티기.</b> RDL(고관절 지배)이 못 채우는 무릎-지배 편심 자극. 근섬유 길이↑ → 햄스트링 유연성·부상예방.'},
   ]},
 };
 /* 영상: 모든 종목을 @DeltaBolic 채널 검색으로 연결(요구사항 #4). vid(영상ID) 있으면 직접, 없으면 검색폴백. */
@@ -354,22 +354,15 @@ const LEGACY_MAP={
   'pull-0':'barbell_row','pull-1':'pullup','pull-2':'seated_row','pull-3':'facepull','pull-4':'incline_curl','pull-5':'pallof',
   'legs-0':'squat','legs-1':'rdl','legs-2':'bss','legs-3':'kb_swing','legs-4':'tibialis_calf','legs-5':'nordic'
 };
-const SHOULDER_WU=[
-  {n:'밴드 풀어파트', c:'후면 어깨·승모 적극 수축하며 가슴 열기 · ×10', sq:'band pull apart'},
-  {n:'밴드 외회전', c:'팔꿈치 옆 고정, 외회전 끝범위 2초 · ×10/측', sq:'band external rotation'},
-  {n:'월 슬라이드', c:'허리 벽에 붙이고 팔 위아래, 중하부 승모 · ×8', sq:'wall slide shoulder'},
-];
-const LEGS_WU=[
-  {n:'능동 카우치 스트레치', c:'뒷다리 무릎 굽힘 + 둔근 짜기 → 고관절 굴곡근 이완 · ×8/측', sq:'couch stretch'},
-  {n:'글루트 브리지', c:'둔근 끝범위 2초 수축 → 둔근 활성·굴곡근 이완 · ×10', sq:'glute bridge'},
-  {n:'능동 레그 레이즈', c:'대퇴사두 수축으로 다리 들기 → 햄스트링 이완 · ×8/측', sq:'leg raise mobility'},
-  {n:'무릎-투-월 발목', c:'발뒤꿈치 고정, 무릎 앞으로 → 발목 도르시플렉션 · ×8/측', sq:'ankle dorsiflexion mobility'},
-];
-const WARMUP={push:SHOULDER_WU, pull:SHOULDER_WU, legs:LEGS_WU};
+const WGS={n:'월드 그레이티스트 스트레치 (WGS)', c:'런지 → 팔꿈치 안쪽 바닥 → 흉추 회전 → 앞다리 펴 햄스트링 폴드. 전신 동적 가동성(고관절·햄·흉추·발목) · 좌우 3회', sq:'worlds greatest stretch'};
+const PUSH_WU=[ WGS, {n:'밴드 풀어파트', c:'견갑 후인 + 후면삼각·회전근개 활성. OHP 있는 날은 손바닥 위(supinated)로 잡아 외회전근까지 · ×15', sq:'band pull apart'} ];
+const PULL_WU=[ WGS, {n:'밴드 풀어파트', c:'견갑 후인 + 후면삼각 활성 · ×15', sq:'band pull apart'} ];
+const LEGS_WU=[ WGS, {n:'무릎-투-월 발목', c:'발뒤꿈치 고정, 무릎 앞으로 → 발목 도르시플렉션 (고관절·햄은 WGS가 커버) · ×8/측', sq:'ankle dorsiflexion mobility'} ];
+const WARMUP={push:PUSH_WU, pull:PULL_WU, legs:LEGS_WU};
 const WARMUP_NOTE={
-  push:'어깨·가슴(라운드숄더) — 길항근(후면 어깨·외회전근)을 적극 수축해 가슴·내회전근을 이완',
-  pull:'어깨·가슴(라운드숄더) — 길항근(후면 어깨·외회전근)을 적극 수축해 가슴·내회전근을 이완',
-  legs:'고관절·햄스트링·발목 — 둔근·대퇴사두를 수축해 굴곡근·햄스트링을 이완'};
+  push:'가벼운 Raise(버피 8~12·전력 X, 또는 가벼운 유산소 2~3분)로 체온↑ → WGS 전신 가동성 → 밴드 풀어파트로 어깨 활성화',
+  pull:'가벼운 Raise(버피 8~12, 또는 가벼운 유산소 2~3분) → WGS 전신 가동성 → 밴드 풀어파트로 어깨 활성화',
+  legs:'가벼운 Raise(버피 8~12, 또는 가벼운 유산소 2~3분) → WGS로 고관절·햄·발목 가동성 (하체는 WGS가 거의 커버)'};
 
 /* ---------- 상태 ---------- */
 let app=null, auth=null, db=null, USER=null, built=false, online=navigator.onLine;
@@ -569,7 +562,7 @@ function metaLine(){
   if(level==='onb') return '<b>온보딩 모드</b> · 2세트 · 가볍게 · RIR 3~4 (실패 X) · 기분 좋게 끝내기 · 주 3~4회로 시작 · 피곤하면 보조/코어 1개 생략 OK · 익숙해지면 숙련으로 전환';
   return week==='S'
     ? '<b>스트렝스 주</b> · 메인 5×5(둘째 메인 4세트) · <b>메인 휴식 2.5분</b>(직렬) · RIR 1~2 (고립 1~3) · 메인 직후 백오프 1세트(50%, 실패까지) · 보조는 슈퍼세트/짧은 휴식으로 묶어 <b>60분 내</b> · 카프는 메인 휴식 중에 끼우면 시간 절약'
-    : '<b>하이퍼트로피 주</b> · 8~15회 · 고립 휴식 짧게(1~1.5분) · RIR 0~2 · 정해진 횟수 채우면 다음에 +무게 · 슈퍼세트 활용 60분 내';
+    : '<b>하이퍼트로피 주</b> · 8~15회 · <b>메인 휴식 2분</b> · 고립 휴식 짧게(1~1.5분) · RIR 0~2 · 정해진 횟수 채우면 다음에 +무게 · 슈퍼세트 활용';
 }
 function setAccent(k){ document.documentElement.style.setProperty('--accent', (DAYS[k]?'var('+DAYS[k].color+')':'var(--push)')); }
 
@@ -584,7 +577,7 @@ function exTier(k,i){ const p=PLAN[k]; if(!p) return 'main';
   if(p.main.includes(i)) return 'main';
   for(const [lab,arr] of p.ss){ if(arr.includes(i)) return 'ss:'+lab; }
   return 'solo'; }
-function restMainSec(){ return 150; } /* 메인 휴식 2.5분(스트렝스·하이퍼 공통) */
+function restMainSec(){ return week==='S'?150:120; } /* 메인 휴식: 스트렝스 2.5분 / 하이퍼 2분 */
 function ssRestSec(){ return week==='S'?75:60; }
 function soloRestSec(){ return 75; }
 /* 과거 기록 키 정규화: dayType-인덱스(레거시) → stable id (LEGACY_MAP·name 폴백, 비파괴 읽기 전용) */
@@ -678,9 +671,9 @@ function refreshBestUI(){
 }
 function warmupBlock(k){
   const items=WARMUP[k].map(w=>`<div class="wu-row"><div class="wu-main"><div class="wu-n">${w.n}</div><div class="wu-c">${w.c}</div></div><a class="yt" href="${vidHref(w)}" target="_blank" rel="noopener">▶ 영상</a></div>`).join('');
-  return `<div class="warm"><div class="warm-h"><span class="badge rom">워밍업</span> 능동 스트레칭 <span class="warm-sub">상호억제 · 각 8~10회 · 반동 X · 동적/능동 5~8분</span></div>
+  return `<div class="warm"><div class="warm-h"><span class="badge rom">워밍업</span> 동적 워밍업 <span class="warm-sub">Raise → WGS → 타깃 활성화 · 약 6~8분</span></div>
     <div class="wu-note">${WARMUP_NOTE[k]}</div>${items}
-    <div class="wu-ramp">→ 마무리: 첫 컴파운드를 가벼운 무게로 1~2 램프업 세트 후 본 세트 진입.</div></div>`;
+    <div class="wu-ramp">→ <b>램프업</b>: 첫 컴파운드는 <b>무게↑·횟수↓</b>로 본세트까지 (예 빈봉×8 → 40%×5 → 60%×3 → 80%×1~2 → 본세트, 3~5세트). 가벼운 세트는 원판 갈며 빠르게, 본세트 직전만 1.5~2분 휴식. <b>둘째 메인은 1~2점프</b>만, 보조는 가벼운 1세트면 충분.</div></div>`;
 }
 function renderDay(k){
   const d=DAYS[k], cur=sessionMeta.condition||0;
@@ -694,7 +687,7 @@ function renderDay(k){
     ${warmupBlock(k)}
     <div class="meta">${metaLine()}</div>`;
   h+=exercisesHtml(k);
-  h+=`<div class="cardio"><b>마무리 유산소</b> — Zone 2(편하게 대화 가능한 강도) 10~15분. 회복·심혈관 목적. 60분 안에 종료.</div>`;
+  h+=`<div class="cardio"><b>마무리 유산소</b> — Zone 2(편하게 대화 가능한 강도) <b>15분</b>. 회복·심혈관 목적. 본운동 마지막에(=능동 쿨다운).</div>`;
   return h;
 }
 
