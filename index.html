@@ -309,44 +309,61 @@ function kstToday(){ const d=new Date(Date.now()+9*3600*1000); return d.toISOStr
 function weekdayKr(iso){ const wd=['일','월','화','수','목','금','토']; const d=new Date(iso+'T00:00:00+09:00'); return wd[d.getDay()]; }
 function shiftDate(iso,delta){ const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+delta); return d.toISOString().slice(0,10); }
 
-/* ---------- 프로그램 데이터 ---------- */
+/* ---------- 프로그램 데이터 ----------
+   주의: 각 종목의 id는 Firestore 기록 키다. APPEND-ONLY — 한 번 쓴 id는
+   변경·재사용 금지(과거 기록이 다른 종목에 오연결됨). 새 종목은 새 id로만 추가.
+   배열 인덱스가 아니라 id로 기록을 키잉하므로 배열 순서는 자유롭게 바꿔도 안전. */
 const FLAG='무릎·힙', FLAGP='자세 교정', FLAGC='코어·마무리';
 const DAYS = {
   push:{name:'Push',kr:'가슴 · 어깨 · 삼두',color:'--push',ex:[
-    {n:'바벨 벤치프레스 (플랫)', s:'5 × 5 (+백오프 1)', h:'4 × 8–12', tempo:'2-0-1', yt:'0cXAp6WhSj4', c:'견갑 후인·하강. 바는 가슴 하부(젖꼭지 라인), 전완 수직. 대흉근 전체·중하부 메인.', rom:'풀 ROM — 바를 가슴까지 깊이, 깊이 컷 금지. 늘어난 바닥 구간이 자극·길이 확보의 핵심.'},
-    {n:'오버헤드 프레스 (바벨/덤벨)', s:'5 × 5', h:'3 × 8–12', tempo:'2-0-1', yt:'CDX3jifKqZ4', c:'갈비뼈(흉곽) 닫아 허리 과신전 방지. 견갑은 위로 회전(고정 X).'},
-    {n:'인클라인 덤벨 프레스 또는 딥', s:'3 × 6–8', h:'3 × 10–15', tempo:'3-1-1', yt:'8fXfwG4ftaQ', c:'윗가슴(쇄골두) — 인클라인 ~30도. 딥은 앞으로 기울여 하부 가슴.', rom:'늘어난 위치 부하 — 바닥에서 가슴 깊게 스트레치 + <b>편심성 3~4초</b>. 가슴(내회전 타이트) 길이 확보. 스미스보다 덤벨이 스트레치 깊이 유리.'},
-    {n:'케이블 / lean-away 사이드 레터럴', s:'3 × 10–12', h:'4 × 15–20', tempo:'2-1-1', yt:'Kl3LEzQ5Zqs', c:'가볍게·반동 X. 고립이라 마지막 세트만 실패 OK.', rom:'바닥(늘어난 구간)에 장력 유지 — 일반 덤벨은 바닥 장력 0. <b>케이블/몸 기울여</b> 측면 삼각근 늘어난 구간 부하.'},
-    {n:'오버헤드 삼두 익스텐션 (또는 푸시다운)', s:'3 × 8–10', h:'3 × 12–20', tempo:'3-1-1', yt:'7OF77JMEXhM', c:'보조. 팔꿈치 옆 고정, 끝까지 펴기.', rom:'머리 위 자세 = <b>장두 늘어난 구간</b> → 푸시다운보다 비대 큼. 깊은 신전에서 스트레치.'},
-    {n:'행잉 레그레이즈 (또는 리버스 크런치)', s:'3 × 10–15', h:'3 × 12–20', tempo:'2-1-2', yt:'FMYJ1lgtSoY', flag:FLAGC, fnote:'세션 맨 마지막. 복직근·하복부(굴곡). 골반 말아 올리고 반동 X. 초보는 무릎 굽힌 니레이즈.'},
+    {id:'bench_flat', n:'바벨 벤치프레스 (플랫)', muscle:'chest', slot:'가슴(중하부)', pattern:'press', s:'5 × 5 (+백오프 1)', h:'4 × 8–12', tempo:'2-0-1', sq:'bench press', c:'견갑 후인·하강. 바는 가슴 하부(젖꼭지 라인), 전완 수직. 대흉근 전체·중하부 메인.', rom:'풀 ROM — 바를 가슴까지 깊이, 깊이 컷 금지. 늘어난 바닥 구간이 자극·길이 확보의 핵심.'},
+    {id:'ohp', n:'오버헤드 프레스 (바벨)', muscle:'shoulder', slot:'어깨(전면)', pattern:'press', s:'5 × 5', h:'3 × 8–12', tempo:'2-0-1', sq:'overhead press', c:'갈비뼈(흉곽) 닫아 허리 과신전 방지. 견갑은 위로 회전(고정 X). 덤벨로 대체 가능.'},
+    {id:'incline_db', n:'인클라인 덤벨 프레스', muscle:'chest', slot:'가슴(상부)', pattern:'press', s:'3 × 6–8', h:'3 × 10–15', tempo:'3-1-1', sq:'incline dumbbell press', c:'윗가슴(쇄골두) — 인클라인 ~30도. 딥으로 대체 가능(앞으로 기울여 하부 가슴).', rom:'늘어난 위치 부하 — 바닥에서 가슴 깊게 스트레치 + <b>편심성 3~4초</b>. 가슴(내회전 타이트) 길이 확보. 스미스보다 덤벨이 스트레치 깊이 유리.'},
+    {id:'lateral_raise', n:'사이드 레터럴 레이즈 (케이블)', muscle:'side_delt', slot:'어깨(측면)', pattern:'isolation', s:'3 × 10–12', h:'4 × 15–20', tempo:'2-1-1', sq:'lateral raise', c:'가볍게·반동 X. 고립이라 마지막 세트만 실패 OK.', rom:'바닥(늘어난 구간)에 장력 유지 — 일반 덤벨은 바닥 장력 0. <b>케이블/몸 기울여</b> 측면 삼각근 늘어난 구간 부하.'},
+    {id:'tri_overhead', n:'오버헤드 삼두 익스텐션', muscle:'triceps', slot:'삼두', pattern:'isolation', s:'3 × 8–10', h:'3 × 12–20', tempo:'3-1-1', sq:'overhead triceps extension', c:'보조. 팔꿈치 옆 고정, 끝까지 펴기. 푸시다운으로 대체 가능.', rom:'머리 위 자세 = <b>장두 늘어난 구간</b> → 푸시다운보다 비대 큼. 깊은 신전에서 스트레치.'},
+    {id:'hanging_leg', n:'행잉 레그레이즈', muscle:'core', slot:'코어', pattern:'core', s:'3 × 10–15', h:'3 × 12–20', tempo:'2-1-2', sq:'hanging leg raise', flag:FLAGC, fnote:'세션 맨 마지막. 복직근·하복부(굴곡). 골반 말아 올리고 반동 X. 초보는 리버스 크런치/무릎 굽힌 니레이즈로 대체.'},
   ]},
   pull:{name:'Pull',kr:'등 · 이두',color:'--pull',ex:[
-    {n:'바벨 로우 (또는 주 1회 데드리프트)', s:'5 × 5', h:'4 × 8–12', tempo:'2-0-1', yt:'QdDrKsvZuvQ', c:'힙힌지·등 중립, 배꼽 쪽으로. 데드 선택 시: 허리가 말리는 순간 = 그 세트 종료(부상 차단).', rom:'시작에서 견갑 앞으로 충분히(광배 늘림) → 당길 때 끝범위 적극 후인. 편심성 통제.'},
-    {n:'풀업 또는 랫풀다운', s:'4 × 5–6', h:'3 × 10–12', tempo:'2-1-1', yt:'bNmvKpJSWKM', c:'광배 세로 자극. 가슴을 바 쪽으로.', rom:'<b>상단 완전 신전</b> — 팔 끝까지 뻗어 광배 늘린 뒤 당기기. 늘어난 구간 확보.'},
-    {n:'시티드 로우 / 덤벨 로우', s:'3 × 6–8', h:'3 × 10–15', tempo:'2-1-1', yt:'8QuMq1GMMng', c:'등 가로 두께. 견갑 모으며 당기기.', rom:'끝에서 견갑을 앞으로 내보내 등 스트레치 확보 → 당길 때 끝범위 적극 후인.'},
-    {n:'페이스풀 (+ 외회전)', s:'3 × 12–15', h:'3 × 15–20', tempo:'2-2-1', yt:'sHSY0Ao8QHs', flag:FLAGP, fnote:'라운드숄더 교정 — 후면 삼각근 + 외회전. 팔꿈치 높게, 손은 귀 옆으로. 항상 고반복·저강도.', rom:'<b>능동 유연성의 핵심.</b> 끝범위에서 외회전·견갑 후인을 적극 수축(정지 2초) → 상호억제로 가슴·내회전근 이완. 라운드숄더 길항근 강화. 외회전(밴드/케이블) 1종 추가 권장.'},
-    {n:'인클라인 덤벨 컬', s:'3 × 8–10', h:'3 × 12–15', tempo:'3-1-1', yt:'ICAXJVmOJik', c:'벤치에 기대 팔을 뒤로. 반동 없이 짜내기.', rom:'기댄 자세로 어깨 신전 → <b>이두 장두 늘어난 위치</b>에서 시작. stretch-mediated 성장 + 길이.'},
-    {n:'팔로프 프레스 (또는 케이블 우드촵)', s:'3 × 10–12 / 측', h:'3 × 12–15 / 측', tempo:'버티기', yt:'PbkMHHFIkVk', flag:FLAGC, fnote:'세션 맨 마지막. 복사근·항회전. 케이블을 옆에 두고 가슴 앞으로 밀어 회전에 버티기. 좌우 동일.'},
+    {id:'barbell_row', n:'바벨 로우', muscle:'back', slot:'등(수평)', pattern:'h_pull', s:'5 × 5', h:'4 × 8–12', tempo:'2-0-1', sq:'barbell row', c:'힙힌지·등 중립, 배꼽 쪽으로. 주 1회 데드리프트로 대체 가능(허리 말리는 순간 = 그 세트 종료).', rom:'시작에서 견갑 앞으로 충분히(광배 늘림) → 당길 때 끝범위 적극 후인. 편심성 통제.'},
+    {id:'pullup', n:'풀업', muscle:'back', slot:'등(수직)', pattern:'v_pull', s:'4 × 5–6', h:'3 × 10–12', tempo:'2-1-1', sq:'pull up', c:'광배 세로 자극. 가슴을 바 쪽으로. 고중량·초보는 랫풀다운으로 대체.', rom:'<b>상단 완전 신전</b> — 팔 끝까지 뻗어 광배 늘린 뒤 당기기. 늘어난 구간 확보.'},
+    {id:'seated_row', n:'시티드 케이블 로우', muscle:'back', slot:'등(수평2)', pattern:'h_pull', s:'3 × 6–8', h:'3 × 10–15', tempo:'2-1-1', sq:'seated cable row', c:'등 가로 두께. 견갑 모으며 당기기. 덤벨 로우로 대체 가능.', rom:'끝에서 견갑을 앞으로 내보내 등 스트레치 확보 → 당길 때 끝범위 적극 후인.'},
+    {id:'facepull', n:'페이스풀 (+ 외회전)', muscle:'rear_delt', slot:'후면삼각·외회전', pattern:'isolation', s:'3 × 12–15', h:'3 × 15–20', tempo:'2-2-1', sq:'face pull', flag:FLAGP, fnote:'라운드숄더 교정 — 후면 삼각근 + 외회전. 팔꿈치 높게, 손은 귀 옆으로. 항상 고반복·저강도.', rom:'<b>능동 유연성의 핵심.</b> 끝범위에서 외회전·견갑 후인을 적극 수축(정지 2초) → 상호억제로 가슴·내회전근 이완. 라운드숄더 길항근 강화.'},
+    {id:'incline_curl', n:'인클라인 덤벨 컬', muscle:'biceps', slot:'이두', pattern:'isolation', s:'3 × 8–10', h:'3 × 12–15', tempo:'3-1-1', sq:'incline dumbbell curl', c:'벤치에 기대 팔을 뒤로. 반동 없이 짜내기.', rom:'기댄 자세로 어깨 신전 → <b>이두 장두 늘어난 위치</b>에서 시작. stretch-mediated 성장 + 길이.'},
+    {id:'pallof', n:'팔로프 프레스', muscle:'core', slot:'코어', pattern:'core', s:'3 × 10–12 / 측', h:'3 × 12–15 / 측', tempo:'버티기', sq:'pallof press', flag:FLAGC, fnote:'세션 맨 마지막. 복사근·항회전. 케이블을 옆에 두고 가슴 앞으로 밀어 회전에 버티기. 좌우 동일. 케이블 우드촵으로 대체 가능.'},
   ]},
   legs:{name:'Legs',kr:'하체',color:'--legs',ex:[
-    {n:'바벨 스쿼트', s:'5 × 5 (+백오프 1)', h:'3–4 × 8–12', tempo:'2-0-1', yt:'W6o1A0bEnmU', flag:FLAG, fnote:'무릎 발끝 방향, 통증 없는 범위. 스트렝스 주는 스쿼트랙·세이프티 바 필수.', rom:'통증 없는 <b>깊은 범위</b> = 대퇴사두·둔근 긴 길이. 편심성 통제.'},
-    {n:'루마니안 데드리프트 (RDL)', s:'4 × 5–6', h:'3 × 8–12', tempo:'3-1-1', yt:'d-hn_0sEpRQ', flag:FLAG, fnote:'후면사슬·힙힌지. 엉덩이 뒤로, 햄스트링 늘어나는 느낌까지. 허리로 펴지 말 것.', rom:'<b>느린 편심성 3~4초 + 바닥 햄스트링 스트레치 최대.</b> 후면사슬 길이·둔근 유연성. 둔근·햄(고관절 신전근)이 타이트한 고관절 굴곡근의 길항근.'},
-    {n:'불가리안 스플릿 스쿼트', s:'3 × 6–8 / 측', h:'3 × 10–12 / 측', tempo:'3-1-1', yt:'or1frhkjBDc', flag:FLAG, fnote:'한다리. 상체 약간 앞으로(힙힌지) → 후면 힙 드라이브, 무릎 전방이동 최소화.', rom:'앞다리 깊은 굴곡으로 둔근 늘어난 위치 부하 + 편심성 통제. 뒷다리 고관절 굴곡근 스트레치도 동반.'},
-    {n:'케틀벨 스윙', s:'4 × 8–10', h:'3 × 15–20', tempo:'폭발적', yt:'n1df4ASFeZU', flag:FLAG, fnote:'후면 힙 드라이브 폭발력. 힙으로 던지고 팔은 줄. 스쿼트 아님.'},
-    {n:'티비알리스 + 카프 레이즈', s:'각 3 × 12–15', h:'각 3 × 15–20', tempo:'2-2-1', yt:'e29hIc-OC84', flag:FLAG, fnote:'정강이 강화로 발목 도르시플렉션 확보·무릎 전방이동 억제. (티비알리스 = 카프의 직접 길항근)', rom:'카프는 발뒤꿈치를 <b>깊이 떨어뜨려 바닥 스트레치 1~2초 정지</b> — 종아리 늘어난 구간 반응 큼. 발목 ROM 확보.'},
-    {n:'노르딕 햄스트링 컬', s:'3 × 4–6', h:'3 × 6–8', tempo:'4-0-1', yt:'', flag:'강도 주의', fnote:'편심성(내려가기) 중심 보조. 무릎 꿇고 발목 고정(파트너·기구·소파/바벨 밑). 상체~무릎 일직선 유지하며 최대한 천천히(4~5초) 버티며 내려가고, 더 못 버티면 손으로 받친 뒤 손으로 밀어 올라옴. 어려우면 밴드 보조·상단 부분 가동범위·수건 슬라이드부터.', rom:'<b>무릎이 거의 펴지는 하단에서 햄스트링이 가장 길게 늘어남 — 그 구간까지 편심성으로 버티기.</b> RDL(고관절 지배)이 못 채우는 무릎-지배 편심 자극. 근섬유 길이↑ → 햄스트링 유연성·부상예방. 케틀벨 스윙과 함께 후면사슬 보완.'},
+    {id:'squat', n:'바벨 스쿼트', muscle:'quads', slot:'스쿼트(대퇴사두)', pattern:'squat', s:'5 × 5 (+백오프 1)', h:'3–4 × 8–12', tempo:'2-0-1', sq:'barbell squat', flag:FLAG, fnote:'무릎 발끝 방향, 통증 없는 범위. 스트렝스 주는 스쿼트랙·세이프티 바 필수.', rom:'통증 없는 <b>깊은 범위</b> = 대퇴사두·둔근 긴 길이. 편심성 통제.'},
+    {id:'rdl', n:'루마니안 데드리프트 (RDL)', muscle:'hamstring_hip', slot:'힌지(둔근·햄 고관절)', pattern:'hinge', s:'4 × 5–6', h:'3 × 8–12', tempo:'3-1-1', sq:'romanian deadlift', flag:FLAG, fnote:'후면사슬·힙힌지. 엉덩이 뒤로, 햄스트링 늘어나는 느낌까지. 허리로 펴지 말 것.', rom:'<b>느린 편심성 3~4초 + 바닥 햄스트링 스트레치 최대.</b> 후면사슬 길이·둔근 유연성. 둔근·햄(고관절 신전근)이 타이트한 고관절 굴곡근의 길항근.'},
+    {id:'bss', n:'불가리안 스플릿 스쿼트', muscle:'quads_glute', slot:'한다리', pattern:'lunge', s:'3 × 6–8 / 측', h:'3 × 10–12 / 측', tempo:'3-1-1', sq:'bulgarian split squat', flag:FLAG, fnote:'한다리. 상체 약간 앞으로(힙힌지) → 후면 힙 드라이브, 무릎 전방이동 최소화. systemic 부하 큼 → 단독 수행·충분한 휴식.', rom:'앞다리 깊은 굴곡으로 둔근 늘어난 위치 부하 + 편심성 통제. 뒷다리 고관절 굴곡근 스트레치도 동반.'},
+    {id:'kb_swing', n:'케틀벨 스윙', muscle:'posterior_chain', slot:'힌지(폭발)', pattern:'hinge', s:'4 × 8–10', h:'3 × 15–20', tempo:'폭발적', sq:'kettlebell swing', flag:FLAG, fnote:'후면 힙 드라이브 폭발력. 힙으로 던지고 팔은 줄. 스쿼트 아님. 호흡 부하 큼 → 단독 수행.'},
+    {id:'tibialis_calf', n:'티비알리스 + 카프 레이즈', muscle:'calf', slot:'종아리·정강이', pattern:'isolation', s:'각 3 × 12–15', h:'각 3 × 15–20', tempo:'2-2-1', sq:'calf raise', flag:FLAG, fnote:'정강이 강화로 발목 도르시플렉션 확보·무릎 전방이동 억제. (티비알리스 = 카프의 직접 길항근)', rom:'카프는 발뒤꿈치를 <b>깊이 떨어뜨려 바닥 스트레치 1~2초 정지</b> — 종아리 늘어난 구간 반응 큼. 발목 ROM 확보.'},
+    {id:'nordic', n:'노르딕 햄스트링 컬', muscle:'hamstring_knee', slot:'햄(무릎굴곡)', pattern:'isolation', s:'3 × 4–6', h:'3 × 6–8', tempo:'4-0-1', sq:'nordic hamstring curl', flag:'강도 주의', fnote:'편심성(내려가기) 중심 보조. 무릎 꿇고 발목 고정(파트너·기구·소파/바벨 밑). 상체~무릎 일직선 유지하며 최대한 천천히(4~5초) 버티며 내려가고, 더 못 버티면 손으로 받친 뒤 손으로 밀어 올라옴. 어려우면 밴드 보조·상단 부분 가동범위·수건 슬라이드부터.', rom:'<b>무릎이 거의 펴지는 하단에서 햄스트링이 가장 길게 늘어남 — 그 구간까지 편심성으로 버티기.</b> RDL(고관절 지배)이 못 채우는 무릎-지배 편심 자극. 근섬유 길이↑ → 햄스트링 유연성·부상예방.'},
   ]},
 };
+/* 영상: 모든 종목을 @DeltaBolic 채널 검색으로 연결(요구사항 #4). vid(영상ID) 있으면 직접, 없으면 검색폴백. */
+const VID_SEARCH='https://www.youtube.com/@DeltaBolic/search?query=';
+function vidHref(ex){ return ex && ex.vid ? 'https://www.youtube.com/shorts/'+ex.vid : VID_SEARCH+encodeURIComponent((ex&&(ex.sq||ex.n))||''); }
+/* id→종목 메타 역인덱스 + 무결성 검증(부팅 1회) */
+const EX_BY_ID={}; (function(){ const seen={};
+  for(const k in DAYS){ DAYS[k].ex.forEach((ex,i)=>{ ex._day=k; ex._i=i; EX_BY_ID[ex.id]=ex;
+    if(seen[ex.id]) console.error('[PPL] 중복 exerciseId:', ex.id, '— id는 append-only, 유일해야 함'); seen[ex.id]=1; }); }
+})();
+/* 과거 기록 키(배열 인덱스 기반 dayType-i)를 stable id로 매핑(읽기 폴백용, append-only) */
+const LEGACY_MAP={
+  'push-0':'bench_flat','push-1':'ohp','push-2':'incline_db','push-3':'lateral_raise','push-4':'tri_overhead','push-5':'hanging_leg',
+  'pull-0':'barbell_row','pull-1':'pullup','pull-2':'seated_row','pull-3':'facepull','pull-4':'incline_curl','pull-5':'pallof',
+  'legs-0':'squat','legs-1':'rdl','legs-2':'bss','legs-3':'kb_swing','legs-4':'tibialis_calf','legs-5':'nordic'
+};
 const SHOULDER_WU=[
-  {n:'밴드 풀어파트', c:'후면 어깨·승모 적극 수축하며 가슴 열기 · ×10', u:'https://www.youtube.com/shorts/PlcK-vBZRuE'},
-  {n:'밴드 외회전', c:'팔꿈치 옆 고정, 외회전 끝범위 2초 · ×10/측', u:'https://www.youtube.com/watch?v=ybNV36DoRfY'},
-  {n:'월 슬라이드', c:'허리 벽에 붙이고 팔 위아래, 중하부 승모 · ×8', u:'https://www.youtube.com/shorts/bbosI4miDDg'},
+  {n:'밴드 풀어파트', c:'후면 어깨·승모 적극 수축하며 가슴 열기 · ×10', sq:'band pull apart'},
+  {n:'밴드 외회전', c:'팔꿈치 옆 고정, 외회전 끝범위 2초 · ×10/측', sq:'band external rotation'},
+  {n:'월 슬라이드', c:'허리 벽에 붙이고 팔 위아래, 중하부 승모 · ×8', sq:'wall slide shoulder'},
 ];
 const LEGS_WU=[
-  {n:'능동 카우치 스트레치', c:'뒷다리 무릎 굽힘 + 둔근 짜기 → 고관절 굴곡근 이완 · ×8/측', u:'https://www.youtube.com/shorts/7dOu7Pqr-bc'},
-  {n:'글루트 브리지', c:'둔근 끝범위 2초 수축 → 둔근 활성·굴곡근 이완 · ×10', u:'https://www.youtube.com/watch?v=J4b0uRf-n6I'},
-  {n:'능동 레그 레이즈', c:'대퇴사두 수축으로 다리 들기 → 햄스트링 이완 · ×8/측', u:'https://www.youtube.com/watch?v=Enz7jtRq_ik'},
-  {n:'무릎-투-월 발목', c:'발뒤꿈치 고정, 무릎 앞으로 → 발목 도르시플렉션 · ×8/측', u:'https://www.youtube.com/shorts/KAAVKi3v700'},
+  {n:'능동 카우치 스트레치', c:'뒷다리 무릎 굽힘 + 둔근 짜기 → 고관절 굴곡근 이완 · ×8/측', sq:'couch stretch'},
+  {n:'글루트 브리지', c:'둔근 끝범위 2초 수축 → 둔근 활성·굴곡근 이완 · ×10', sq:'glute bridge'},
+  {n:'능동 레그 레이즈', c:'대퇴사두 수축으로 다리 들기 → 햄스트링 이완 · ×8/측', sq:'leg raise mobility'},
+  {n:'무릎-투-월 발목', c:'발뒤꿈치 고정, 무릎 앞으로 → 발목 도르시플렉션 · ×8/측', sq:'ankle dorsiflexion mobility'},
 ];
 const WARMUP={push:SHOULDER_WU, pull:SHOULDER_WU, legs:LEGS_WU};
 const WARMUP_NOTE={
@@ -470,7 +487,7 @@ async function loadDay(){
     if(dd!==date || dt!==dayType) return;
     if(snap.exists()){
       const d=snap.data();
-      store = d.entries || {};
+      store = normalizeEntries(d.entries, dt);
       sessionMeta = { condition:(d.condition??null), memo:(d.memo||''), bodyweight_kg:(d.bodyweight_kg??''), sleep_hours:(d.sleep_hours??''), is_deload:!!d.is_deload };
     } else { store={}; sessionMeta={}; }
     render();
@@ -483,12 +500,12 @@ async function loadBest(){
     const qs = await getDocs(query(collection(db,'users',USER.uid,'sessions'), where('dayType','==',dayType)));
     const docs=[]; qs.forEach(s=>docs.push(s.data()));
     const m={};
-    for(const d of docs){ const ents=d.entries||{}; for(const k in ents){ const e=e1rm(ents[k].w, ents[k].r); if(e && (!m[k]||e>m[k])) m[k]=e; } }
+    for(const d of docs){ const ents=normalizeEntries(d.entries, dayType); for(const k in ents){ const e=e1rm(ents[k].w, ents[k].r); if(e && (!m[k]||e>m[k])) m[k]=e; } }
     bestMap=m;
     // 지난 기록: 현재 날짜 이전 세션을 최신순으로, 종목별·블록별(S/H) 가장 최근 1건
     const prior=docs.filter(d=>d.date && d.date < date).sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
     const lm={};
-    for(const d of prior){ const blk=(d.week_block==='H')?'H':'S'; const ents=d.entries||{};
+    for(const d of prior){ const blk=(d.week_block==='H')?'H':'S'; const ents=normalizeEntries(d.entries, dayType);
       for(const k in ents){ const e=ents[k]; if(!e||!(e.w||e.r)) continue;
         if(!lm[k]) lm[k]={}; if(!lm[k][blk]) lm[k][blk]={ w:e.w, r:e.r, rir:e.rir, date:d.date }; } }
     lastMap=lm;
@@ -551,16 +568,17 @@ function rx(ex){ if(level==='onb') return week==='S'?'2 × 6–8':'2 × 12–15'
 function metaLine(){
   if(level==='onb') return '<b>온보딩 모드</b> · 2세트 · 가볍게 · RIR 3~4 (실패 X) · 기분 좋게 끝내기 · 주 3~4회로 시작 · 피곤하면 보조/코어 1개 생략 OK · 익숙해지면 숙련으로 전환';
   return week==='S'
-    ? '<b>스트렝스 주</b> · 메인 컴파운드 5×5 · 휴식 3분+ · RIR 1~2 (고립 1~3) · 메인 직후 백오프 1세트(50%, 실패까지)'
-    : '<b>하이퍼트로피 주</b> · 8~15회 · 고립 휴식 짧게(1~1.5분) · RIR 0~2 · 정해진 횟수 채우면 다음에 +무게';
+    ? '<b>스트렝스 주</b> · 메인 컴파운드 5×5 · <b>메인만</b> 휴식 3분+(직렬) · RIR 1~2 (고립 1~3) · 메인 직후 백오프 1세트(50%, 실패까지) · 보조는 슈퍼세트/짧은 휴식으로 묶어 <b>60분 내</b> 마무리'
+    : '<b>하이퍼트로피 주</b> · 8~15회 · 고립 휴식 짧게(1~1.5분) · RIR 0~2 · 정해진 횟수 채우면 다음에 +무게 · 슈퍼세트 활용 60분 내';
 }
 function setAccent(k){ document.documentElement.style.setProperty('--accent', (DAYS[k]?'var('+DAYS[k].color+')':'var(--push)')); }
 
-/* ---------- 운동 구성: 메인(직렬·긴 휴식) + 슈퍼세트(나머지) ---------- */
+/* ---------- 운동 구성: 메인(직렬·긴 휴식) + 슈퍼세트(길항/비경쟁만) + 단독 ----------
+   슈퍼세트 안전 규칙: 같은 근육·코어는 묶지 않음(눈앞 캄캄 사고 방지). 수정 후 validateProgram가 런타임 검증. */
 const PLAN = {
-  push: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },
-  pull: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },
-  legs: { main:[0,1], ss:[['A',[2,3]]], solo:[5,4], order:[0,1,2,3,5,4] },
+  push: { main:[0,1], ss:[['A',[2,3]]], solo:[4,5] },   // ssA=인클라인(가슴상부)+레터럴(측면) · 삼두(4)·코어(5) 단독
+  pull: { main:[0,1], ss:[['A',[2,3]]], solo:[4,5] },   // ssA=시티드로우(등)+페이스풀(후면삼각) · 이두(4)·코어(5) 단독
+  legs: { main:[0,1], ss:[['A',[5,4]]], solo:[2,3], order:[0,1,2,3,5,4] }, // 사고페어 해체: 불가리안(2)·스윙(3) 단독 / ssA=노르딕(햄)+카프(종아리) 비경쟁
 };
 function exTier(k,i){ const p=PLAN[k]; if(!p) return 'main';
   if(p.main.includes(i)) return 'main';
@@ -569,6 +587,28 @@ function exTier(k,i){ const p=PLAN[k]; if(!p) return 'main';
 function restMainSec(){ return week==='S'?180:150; }
 function ssRestSec(){ return week==='S'?75:60; }
 function soloRestSec(){ return 75; }
+/* 과거 기록 키 정규화: dayType-인덱스(레거시) → stable id (LEGACY_MAP·name 폴백, 비파괴 읽기 전용) */
+function nameToId(k,name){ if(!name) return null; const ex=(DAYS[k]&&DAYS[k].ex)||[]; const hit=ex.find(e=>e.n===name); return hit?hit.id:null; }
+function normalizeEntries(ents,k){
+  if(!ents) return {};
+  const ids=new Set(((DAYS[k]&&DAYS[k].ex)||[]).map(e=>e.id)); const out={};
+  for(const key in ents){ if(ids.has(key)) continue; const t=LEGACY_MAP[key]||nameToId(k, ents[key]&&ents[key].name)||key; if(out[t]===undefined) out[t]=ents[key]; }
+  for(const key in ents){ if(ids.has(key)) out[key]=ents[key]; } // 직접 id 키(최신 쓰기) 우선
+  return out;
+}
+/* 프로그램 무결성 검증(렌더 시): order 누락/중복 + 슈퍼세트 같은근육/코어 금지 → 가시 에러 */
+function validateProgram(k){
+  const p=PLAN[k], ex=DAYS[k]&&DAYS[k].ex, issues=[]; if(!p||!ex) return issues;
+  const order=p.order||ex.map((_,n)=>n); const seen=new Array(ex.length).fill(0);
+  order.forEach(i=>{ if(i>=0&&i<ex.length) seen[i]++; else issues.push('order 잘못된 인덱스 '+i); });
+  seen.forEach((c,i)=>{ if(c!==1) issues.push('종목 '+i+' "'+(ex[i]?ex[i].n:'?')+'" order '+c+'회(1회여야)'); });
+  (p.ss||[]).forEach(([lab,arr])=>{
+    arr.forEach(i=>{ if(ex[i]&&ex[i].slot==='코어') issues.push('슈퍼세트 '+lab+'에 코어 "'+ex[i].n+'" 포함(금지)'); });
+    for(let a=0;a<arr.length;a++) for(let b=a+1;b<arr.length;b++){ const ma=ex[arr[a]]&&ex[arr[a]].muscle, mb=ex[arr[b]]&&ex[arr[b]].muscle;
+      if(ma&&ma===mb) issues.push('슈퍼세트 '+lab+': "'+ex[arr[a]].n+'" + "'+ex[arr[b]].n+'" 같은 근육('+ma+')'); }
+  });
+  return issues;
+}
 function exercisesHtml(k){
   const ex=DAYS[k].ex; const order=(PLAN[k]&&PLAN[k].order)||ex.map((_,n)=>n);
   let out=''; let p=0, num=0;
@@ -594,7 +634,7 @@ function sessionPanel(){
     </div></div>`;
 }
 function exCard(k,ex,i,num){
-  const id=k+'-'+i, rec=store[id]||{}, best=bestMap[id]||0, e1=e1rm(rec.w,rec.r);
+  const id=ex.id, rec=store[id]||{}, best=bestMap[id]||0, e1=e1rm(rec.w,rec.r);
   const _t=exTier(k,i);
   const restBadge = _t==='main' ? `<button class="restbtn" data-rest="${restMainSec()}">⏱ 휴식 ${restMainSec()}s</button>`
                   : _t==='solo' ? `<button class="restbtn" data-rest="${soloRestSec()}">⏱ 휴식 ${soloRestSec()}s</button>` : '';
@@ -615,7 +655,7 @@ function exCard(k,ex,i,num){
     <div class="ex-side"><div class="ex-rx">${rx(ex)}</div>
       ${ex.tempo?`<div class="tempo">⏱ ${/[0-9]/.test(ex.tempo)?'템포 '+ex.tempo:ex.tempo}</div>`:''}
       ${restBadge}
-      <a class="yt" href="${ex.yt?('https://www.youtube.com/shorts/'+ex.yt):('https://www.youtube.com/results?search_query='+encodeURIComponent(ex.n+' 자세'))}" target="_blank" rel="noopener">▶ 영상</a></div>
+      <a class="yt" href="${vidHref(ex)}" target="_blank" rel="noopener">▶ 영상</a></div>
     </div>
     ${lastRec}
     <div class="log">
@@ -637,7 +677,7 @@ function refreshBestUI(){
   });
 }
 function warmupBlock(k){
-  const items=WARMUP[k].map(w=>`<div class="wu-row"><div class="wu-main"><div class="wu-n">${w.n}</div><div class="wu-c">${w.c}</div></div><a class="yt" href="${w.u}" target="_blank" rel="noopener">▶ 영상</a></div>`).join('');
+  const items=WARMUP[k].map(w=>`<div class="wu-row"><div class="wu-main"><div class="wu-n">${w.n}</div><div class="wu-c">${w.c}</div></div><a class="yt" href="${vidHref(w)}" target="_blank" rel="noopener">▶ 영상</a></div>`).join('');
   return `<div class="warm"><div class="warm-h"><span class="badge rom">워밍업</span> 능동 스트레칭 <span class="warm-sub">상호억제 · 각 8~10회 · 반동 X · 동적/능동 5~8분</span></div>
     <div class="wu-note">${WARMUP_NOTE[k]}</div>${items}
     <div class="wu-ramp">→ 마무리: 첫 컴파운드를 가벼운 무게로 1~2 램프업 세트 후 본 세트 진입.</div></div>`;
@@ -645,8 +685,11 @@ function warmupBlock(k){
 function renderDay(k){
   const d=DAYS[k], cur=sessionMeta.condition||0;
   const emos=[['😣',1],['😐',2],['😀',3]].map(([e,v])=>`<button data-c="${v}" class="${cur===v?'on':''}">${e}</button>`).join('');
+  const issues=validateProgram(k); if(issues.length) console.error('[PPL] 프로그램 무결성 오류('+k+'):', issues);
+  const banner = issues.length ? `<div style="background:rgba(224,122,122,.12);border:1px solid var(--bad);color:var(--bad);border-radius:8px;padding:8px 11px;margin:2px 0 10px;font-size:12px;font-weight:700">⚠ 프로그램 설정 오류(코드 확인 필요): ${esc(issues.join(' · '))}</div>` : '';
   let h=`<div class="dayhead"><span class="num">${d.name.toUpperCase()}</span><h2>${d.kr}</h2>
     <div class="cond"><span>오늘 컨디션</span>${emos}</div></div>
+    ${banner}
     ${sessionPanel()}
     ${warmupBlock(k)}
     <div class="meta">${metaLine()}</div>`;
