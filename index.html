@@ -12,14 +12,17 @@
 <title>파워빌딩 PPL · 일지</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%8B%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23121418'/%3E%3Ctext x='50' y='52' font-size='62' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%8F%8B%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<!-- SP-6: 인라인 manifest(data URI) — 홈화면 추가 시 standalone. start_url/scope는 상대('./')로 root·preview 양쪽 호환. SW는 미채택(단일 HTML 유지). -->
+<link rel="manifest" href='data:application/manifest+json,{"name":"Powerbuilding PPL","short_name":"PPL","start_url":"./","scope":"./","display":"standalone","background_color":"%23121418","theme_color":"%23121418","icons":[{"src":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjIyIiBmaWxsPSIjRjI5OTRBIi8+PHRleHQgeD0iNTAiIHk9IjYyIiBmb250LXNpemU9IjM4IiBmb250LXdlaWdodD0iODAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjMTIxNDE4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+UFBMPC90ZXh0Pjwvc3ZnPg==","sizes":"any","type":"image/svg+xml"}]}'>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#121418; --panel:#1A1D24; --panel2:#21252E; --line:#2C313B;
-    --text:#E7E9ED; --muted:#9AA0AB; --faint:#7E8694;
+    --text:#E7E9ED; --muted:#9AA0AB; --faint:#949BA8;
     --push:#F2994A; --pull:#3FBFD4; --legs:#B084E8; --flag:#E8C25A; --rom:#5FD3A8;
+    --str:#E8705A; --hyp:#6FA8DC; /* 주간 모드 고유색(STR=강도/적, HYP=볼륨/청) */
     --accent:var(--push); --bad:#E07A7A;
     --mono:'Space Mono',monospace; --sans:'Archivo',system-ui,sans-serif;
   }
@@ -66,18 +69,31 @@
   .seg .lbl{font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.06em;padding:0 10px;text-transform:uppercase}
   .seg button{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:12.5px;padding:8px 13px;cursor:pointer}
   .seg button.on{background:var(--accent);color:#15171c}
+  .guidebtn{margin-left:auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:8px 13px;font-family:var(--sans);font-weight:700;font-size:12.5px;cursor:pointer}
+  .guidebtn.on{border-color:var(--accent);color:var(--accent)}
 
   /* date bar */
   .datebar{display:flex;align-items:center;gap:8px;margin:14px 0 2px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px}
-  .datebar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:34px;height:34px;font-size:16px;font-weight:800;cursor:pointer;line-height:1;flex:none}
+  .datebar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:42px;height:42px;font-size:17px;font-weight:800;cursor:pointer;line-height:1;flex:none}
   .datebar .di{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px}
-  .datebar input[type=date]{background:none;border:0;color:var(--text);font-family:var(--mono);font-size:14px;font-weight:700;text-align:center;width:100%;color-scheme:dark}
+  .datebar input[type=date]{background:none;border:0;color:var(--text);font-family:var(--mono);font-size:14px;font-weight:700;text-align:center;width:auto;max-width:100%;color-scheme:dark} /* width:auto → 모바일에서 날짜가 가운데로(100%면 좌측 정렬됨) */
   .datebar .dw{font-size:10.5px;color:var(--faint);font-weight:700}
-  .datebar .today{flex:none;font-size:11px;font-weight:700;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0 10px;height:34px;cursor:pointer}
+  .datebar .today{flex:none;width:auto;font-size:11px;font-weight:700;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0 12px;height:42px;cursor:pointer} /* width:auto로 '.datebar button'의 42px 고정폭 상속 해제(안 그러면 '오늘'이 세로로 줄바꿈) */
 
-  .tabs{display:flex;gap:3px;margin:16px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-  .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:13.5px;padding:10px 11px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs{display:flex;gap:6px;margin:14px 0;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:14px;padding:11px 6px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
   .tab:hover{color:var(--text)} .tab.on{color:var(--text);border-bottom-color:var(--accent)}
+  /* Str/Hyp 토글: 알약형 2분할(STR|HYP). 활성=모드색, 비활성=그레이·어둡게. 둘 다 항상 보여 폭 고정→탭 안 밀림 */
+  .wktoggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none;margin-bottom:6px}
+  .wktoggle button{border:0;background:var(--panel);color:var(--faint);font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.05em;padding:8px 0;width:42px;cursor:pointer;line-height:1.1;filter:saturate(.5) brightness(.85)}
+  .wktoggle button+button{border-left:1px solid var(--line)}
+  .wktoggle button.on{color:#15171c;filter:none}
+  .wktoggle button[data-week="S"].on{background:var(--str)}
+  .wktoggle button[data-week="H"].on{background:var(--hyp)}
+  /* 가이드 하위탭(원칙·행동·근거) */
+  .gtabs{display:flex;gap:4px;margin:0 0 14px;flex-wrap:wrap}
+  .gtab{background:var(--panel);border:1px solid var(--line);color:var(--muted);font-family:var(--sans);font-weight:700;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer}
+  .gtab.on{border-color:var(--accent);color:var(--accent);background:var(--panel2)}
 
   .view{animation:fade .2s ease}
   @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
@@ -105,22 +121,35 @@
   .spanel .dl button.on{border-color:var(--flag);color:var(--flag);background:rgba(232,194,90,.1)}
 
   .ex{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-bottom:10px;border-left:3px solid var(--accent)}
-  .ex-top{display:flex;gap:12px;align-items:flex-start}
-  .ex-num{font-family:var(--mono);font-size:12px;color:var(--faint);padding-top:2px;width:20px;flex:none}
-  .ex-main{flex:1;min-width:0}
-  .ex-name{font-weight:700;font-size:15.5px;word-break:keep-all}
+  .ex-top{display:flex;gap:10px;align-items:center}
+  .ex-num{font-family:var(--mono);font-size:12px;color:var(--faint);width:20px;flex:none}
   .ex-cue{color:var(--muted);font-size:12.5px;margin-top:3px;word-break:keep-all}
-  .ex-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
-  .ex-rx{font-family:var(--mono);font-weight:700;font-size:14px;color:var(--text);background:var(--panel2);border-radius:7px;padding:5px 9px;white-space:nowrap}
-  .tempo{font-family:var(--mono);font-size:10.5px;color:var(--rom);background:rgba(95,211,168,.08);border:1px solid rgba(95,211,168,.25);border-radius:6px;padding:3px 7px;white-space:nowrap;letter-spacing:.02em}
-  .yt{font-family:var(--sans);font-size:11.5px;font-weight:700;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:7px;padding:4px 9px;white-space:nowrap}
-  .yt:hover{border-color:var(--accent);background:var(--panel2)}
+  /* 처방(rx)은 항상 자기 줄에 히어로로 + 템포·휴식·영상은 그 아래 한 줄, 모두 같은 칩 형태(처방과 같은 mono·테두리·라운드 계열) */
+  .ex-rxline{margin-top:11px}
+  .ex-rx{display:inline-flex;align-items:center;font-family:var(--mono);font-weight:700;font-size:17px;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0 12px;height:42px}
+  .ex-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px}
+  /* 칩: 높이·여백·테두리·폰트 전부 동일. 기능은 글자색만 다름(읽기전용=중립, 휴식=초록, 영상=강조) */
+  .chip{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.02em;white-space:nowrap;text-decoration:none;color:var(--muted);cursor:default;box-sizing:border-box}
+  .chip.info{color:var(--muted)}
+  .chip.act{color:var(--rom);cursor:pointer}
+  .chip.vid{color:var(--accent);cursor:pointer}
+  .chip.act:active,.chip.vid:active{transform:scale(.97)}
+  /* SP-4: 종목명 옆 상태 점(뱃지 대체) + 설명 펼치기 토글 + 접이 영역 */
+  .ex-name{display:flex;align-items:center;gap:2px;flex:1;min-width:0}
+  .exn-t{font-weight:700;font-size:15.5px;word-break:keep-all}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:5px;flex:none}
+  .dot.flag{background:var(--flag)} .dot.rom{background:var(--rom)}
+  .exi{background:none;border:1px solid var(--line);color:var(--muted);border-radius:50%;width:30px;height:30px;min-width:30px;font-size:13px;line-height:1;cursor:pointer;flex:none;margin-left:6px;padding:0}
+  .exi[aria-expanded="true"]{border-color:var(--accent);color:var(--accent);background:var(--panel2)}
+  .exfold{margin-top:9px}
+  .flagtag{display:inline-block;font-size:11px;font-weight:700;color:var(--flag);border:1px solid rgba(232,194,90,.3);background:rgba(232,194,90,.1);border-radius:6px;padding:2px 8px;margin-bottom:7px}
+  .e1rm.hide{display:none}
   .ssgroup{border:1px dashed var(--accent);border-radius:12px;padding:9px 9px 2px;margin:0 0 10px}
   .ss-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:800;font-size:13px;color:var(--accent);padding:2px 4px 9px}
   .ss-h span{flex:1 1 100%;order:3;font-weight:600;font-size:11px;color:var(--muted)}
-  .restbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--rom);border-radius:7px;padding:5px 10px;font-family:var(--mono);font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .restbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--rom);border-radius:7px;padding:8px 12px;min-height:38px;font-family:var(--mono);font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
   .restbtn:hover{border-color:var(--rom)} .restbtn:active{transform:scale(.96)}
-  .ex-side .restbtn{margin-left:0}
+  .ss-warn{font-size:11.5px;color:var(--flag);background:rgba(232,194,90,.08);border:1px solid rgba(232,194,90,.25);border-radius:7px;padding:6px 9px;margin:0 4px 9px;word-break:keep-all}
 
   .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:20px;vertical-align:middle;margin-left:6px;background:rgba(232,194,90,.13);color:var(--flag);border:1px solid rgba(232,194,90,.3);word-break:keep-all;white-space:nowrap}
   .flagnote{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12.5px;background:rgba(232,194,90,.07);border-left:2px solid var(--flag);color:#D8C896}
@@ -133,15 +162,10 @@
   .log input{width:58px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 8px;font-family:var(--mono);font-size:13px;text-align:center}
   .log input.note{width:130px;text-align:left;font-family:var(--sans);font-size:12px}
   .log input:focus{outline:none;border-color:var(--accent)}
+  .log input::placeholder{color:var(--faint);opacity:1} /* 지난 값 예시(회색) */
   .e1rm{margin-left:auto;font-size:11.5px;color:var(--muted);font-family:var(--mono);background:var(--panel2);border-radius:7px;padding:6px 10px;white-space:nowrap}
   .e1rm b{color:var(--rom);font-size:13.5px}
   .e1rm .best{color:var(--faint)}
-  .lastrec{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-family:var(--mono)}
-  .lastrec b{color:var(--text);font-size:12.5px}
-  .lastrec.alt{opacity:.9} .lastrec.none{color:var(--faint);font-family:var(--sans)}
-  .lastrec .altn{color:var(--flag)}
-  .lastfill{margin-left:auto;background:var(--bg);border:1px solid var(--line);color:var(--accent);border-radius:6px;padding:4px 9px;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
-  .lastfill:hover{border-color:var(--accent)} .lastfill:active{transform:scale(.95)}
   .entryclear{background:none;border:1px solid var(--line);color:var(--faint);border-radius:7px;padding:6px 9px;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex:none}
   .entryclear:hover{border-color:var(--bad);color:var(--bad)}
   .hdel{background:none;border:1px solid var(--line);color:var(--faint);border-radius:7px;padding:3px 9px;font-size:13px;cursor:pointer;line-height:1;flex:none}
@@ -183,6 +207,13 @@
   .save{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 16px;border-radius:30px;font-size:12.5px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:60}
   .save.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .save.err{border-color:var(--bad);color:var(--bad)} .save.off{border-color:var(--flag);color:var(--flag)}
+  /* SP-3: 지난/미래 날짜 경고 */
+  .dw-warn{color:var(--flag);font-weight:800}
+  .datebar.pastdate{border-color:var(--flag)}
+  /* SP-3: 기록 내보내기 버튼 */
+  .hexport{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer}
+  /* SP-5: 탭패널 포커스 시 외곽선 박스 억제(프로그램적 포커스용) */
+  #main:focus{outline:none}
 
   .fab{position:fixed;right:16px;bottom:18px;width:56px;height:56px;border-radius:50%;background:var(--rom);color:#10231C;border:none;font-size:22px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:50;display:flex;align-items:center;justify-content:center}
   .fab:active{transform:scale(.94)}
@@ -204,9 +235,6 @@
 
   @media(max-width:520px){
     header .lede{font-size:20px}
-    .ex-top{flex-wrap:wrap}
-    .ex-main{flex:1 1 calc(100% - 32px);min-width:0}
-    .ex-side{order:3;flex:0 0 100%;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;margin-top:6px;flex-wrap:wrap}
     .cond{margin-left:0;width:100%}
     .log input.note{width:100%}
   }
@@ -229,10 +257,9 @@
   </header>
 
   <div class="bar">
-    <div class="seg" id="weekSeg"><span class="lbl">이번 주</span>
-      <button data-week="S">스트렝스</button><button data-week="H">하이퍼트로피</button></div>
     <div class="seg" id="lvlSeg"><span class="lbl">숙련도</span>
       <button data-lvl="adv">숙련</button><button data-lvl="onb">온보딩</button></div>
+    <button class="guidebtn" id="guideBtn" type="button" aria-label="가이드(원칙·행동·근거)">📖 가이드</button>
   </div>
 
   <div class="datebar" id="datebar">
@@ -242,6 +269,7 @@
     <button class="today" id="dToday">오늘</button>
   </div>
 
+  <!-- Str/Hyp 토글 + P/P/L·기록 탭을 한 줄에(toggle는 build에서 prepend) -->
   <nav class="tabs" id="tabs"></nav>
   <main id="main"></main>
 </div>
@@ -319,14 +347,14 @@ const DAYS = {
     {id:'bench_flat', vid:'7jDS4VQc43k', n:'바벨 벤치프레스 (플랫)', muscle:'chest', slot:'가슴(중하부)', pattern:'press', s:'5 × 5 (+백오프 1)', h:'4 × 8–12', tempo:'2-0-1', sq:'bench press', c:'견갑 후인·하강. 바는 가슴 하부(젖꼭지 라인), 전완 수직. 대흉근 전체·중하부 메인.', rom:'풀 ROM — 바를 가슴까지 깊이, 깊이 컷 금지. 늘어난 바닥 구간이 자극·길이 확보의 핵심.'},
     {id:'ohp', vid:'VWFoCFyZ7Z4', n:'오버헤드 프레스 (바벨)', muscle:'shoulder', slot:'어깨(전면)', pattern:'press', s:'4 × 5', h:'3 × 8–12', tempo:'2-0-1', sq:'overhead press', c:'갈비뼈(흉곽) 닫아 허리 과신전 방지. 견갑은 위로 회전(고정 X). 덤벨로 대체 가능.'},
     {id:'incline_db', vid:'JgP9JJnmsjc', n:'인클라인 덤벨 프레스', muscle:'chest', slot:'가슴(상부)', pattern:'press', s:'3 × 6–8', h:'3 × 10–15', tempo:'3-1-1', sq:'incline dumbbell press', c:'윗가슴(쇄골두) — 인클라인 ~30도. 딥으로 대체 가능(앞으로 기울여 하부 가슴).', rom:'늘어난 위치 부하 — 바닥에서 가슴 깊게 스트레치 + <b>편심성 3~4초</b>. 가슴(내회전 타이트) 길이 확보. 스미스보다 덤벨이 스트레치 깊이 유리.'},
-    {id:'lateral_raise', vid:'2pb0rbxV62U', n:'사이드 레터럴 레이즈 (케이블)', muscle:'side_delt', slot:'어깨(측면)', pattern:'isolation', s:'3 × 10–12', h:'4 × 15–20', tempo:'2-1-1', sq:'lateral raise', c:'가볍게·반동 X. 고립이라 마지막 세트만 실패 OK.', rom:'바닥(늘어난 구간)에 장력 유지 — 일반 덤벨은 바닥 장력 0. <b>케이블/몸 기울여</b> 측면 삼각근 늘어난 구간 부하.'},
-    {id:'tri_overhead', vid:'J565P8FzJXA', n:'오버헤드 삼두 익스텐션', muscle:'triceps', slot:'삼두', pattern:'isolation', s:'3 × 8–10', h:'3 × 12–20', tempo:'3-1-1', sq:'overhead triceps extension', c:'보조. 팔꿈치 옆 고정, 끝까지 펴기. 푸시다운으로 대체 가능.', rom:'머리 위 자세 = <b>장두 늘어난 구간</b> → 푸시다운보다 비대 큼. 깊은 신전에서 스트레치.'},
+    {id:'lateral_raise', vid:'2pb0rbxV62U', n:'사이드 레터럴 레이즈 (케이블)', muscle:'side_delt', slot:'어깨(측면)', pattern:'isolation', s:'4 × 10–12', h:'4 × 15–20', tempo:'2-1-1', sq:'lateral raise', c:'가볍게·반동 X. 고립이라 마지막 세트만 실패 OK.', rom:'바닥(늘어난 구간)에 장력 유지 — 일반 덤벨은 바닥 장력 0. <b>케이블/몸 기울여</b> 측면 삼각근 늘어난 구간 부하.'},
+    {id:'tri_overhead', vid:'J565P8FzJXA', n:'오버헤드 삼두 익스텐션', muscle:'triceps', slot:'삼두', pattern:'isolation', s:'3 × 8–10', h:'3 × 12–20', tempo:'3-1-1', sq:'overhead triceps extension', c:'보조. 팔꿈치 옆 고정, 끝까지 펴기. 푸시다운으로 대체 가능.', rom:'머리 위 자세 = <b>장두 늘어난 구간</b> → 푸시다운보다 비대에 유리할 수 있음(특히 비숙련자, 숙련자는 풀ROM과 비슷). 깊은 신전에서 스트레치.'},
     {id:'hanging_leg', vid:'SdIczSwWM6o', n:'행잉 레그레이즈', muscle:'core', slot:'코어', pattern:'core', s:'3 × 10–15', h:'3 × 12–20', tempo:'2-1-2', sq:'hanging leg raise', flag:FLAGC, fnote:'세션 맨 마지막. 복직근·하복부(굴곡). 골반 말아 올리고 반동 X. 초보는 리버스 크런치/무릎 굽힌 니레이즈로 대체.'},
   ]},
   pull:{name:'Pull',kr:'등 · 이두',color:'--pull',ex:[
     {id:'barbell_row', vid:'qvqVbDPme5k', n:'바벨 로우', muscle:'back', slot:'등(수평)', pattern:'h_pull', s:'5 × 5', h:'4 × 8–12', tempo:'2-0-1', sq:'barbell row', c:'힙힌지·등 중립, 배꼽 쪽으로. 주 1회 데드리프트로 대체 가능(허리 말리는 순간 = 그 세트 종료).', rom:'시작에서 견갑 앞으로 충분히(광배 늘림) → 당길 때 끝범위 적극 후인. 편심성 통제.'},
     {id:'pullup', vid:'a7_k1upEPjc', n:'풀업', muscle:'back', slot:'등(수직)', pattern:'v_pull', s:'4 × 5–6', h:'3 × 10–12', tempo:'2-1-1', sq:'pull up', c:'광배 세로 자극. 가슴을 바 쪽으로. 고중량·초보는 랫풀다운으로 대체.', rom:'<b>상단 완전 신전</b> — 팔 끝까지 뻗어 광배 늘린 뒤 당기기. 늘어난 구간 확보.'},
-    {id:'seated_row', vid:'bCd7Xil89F8', n:'시티드 케이블 로우', muscle:'back', slot:'등(수평2)', pattern:'h_pull', s:'3 × 6–8', h:'3 × 10–15', tempo:'2-1-1', sq:'seated cable row', c:'등 가로 두께. 견갑 모으며 당기기. 덤벨 로우로 대체 가능.', rom:'끝에서 견갑을 앞으로 내보내 등 스트레치 확보 → 당길 때 끝범위 적극 후인.'},
+    {id:'seated_row', vid:'bCd7Xil89F8', n:'시티드 케이블 로우', muscle:'back', slot:'등(수평2)', pattern:'h_pull', s:'2 × 6–8', h:'3 × 10–15', tempo:'2-1-1', sq:'seated cable row', c:'등 가로 두께. 견갑 모으며 당기기. 덤벨 로우로 대체 가능.', rom:'끝에서 견갑을 앞으로 내보내 등 스트레치 확보 → 당길 때 끝범위 적극 후인.'},
     {id:'facepull', vid:'pWz3oR0iLCA', n:'페이스풀 (+ 외회전)', muscle:'rear_delt', slot:'후면삼각·외회전', pattern:'isolation', s:'3 × 12–15', h:'3 × 15–20', tempo:'2-2-1', sq:'face pull', flag:FLAGP, fnote:'라운드숄더 교정 — 후면 삼각근 + 외회전. 팔꿈치 높게, 손은 귀 옆으로. 항상 고반복·저강도.', rom:'<b>능동 유연성의 핵심.</b> 끝범위에서 외회전·견갑 후인을 적극 수축(정지 2초) → 상호억제로 가슴·내회전근 이완. 라운드숄더 길항근 강화.'},
     {id:'incline_curl', vid:'uCUaRFlA9vE', n:'인클라인 덤벨 컬', muscle:'biceps', slot:'이두', pattern:'isolation', s:'3 × 8–10', h:'3 × 12–15', tempo:'3-1-1', sq:'incline dumbbell curl', c:'벤치에 기대 팔을 뒤로. 반동 없이 짜내기.', rom:'기댄 자세로 어깨 신전 → <b>이두 장두 늘어난 위치</b>에서 시작. stretch-mediated 성장 + 길이.'},
     {id:'pallof', vid:'xe2MXatLTUw', n:'팔로프 프레스', muscle:'core', slot:'코어', pattern:'core', s:'3 × 10–12 / 측', h:'3 × 12–15 / 측', tempo:'버티기', sq:'pallof press', flag:FLAGC, fnote:'세션 맨 마지막. 복사근·항회전. 케이블을 옆에 두고 가슴 앞으로 밀어 회전에 버티기. 좌우 동일. 케이블 우드촵으로 대체 가능.'},
@@ -337,7 +365,7 @@ const DAYS = {
     {id:'bss', vid:'Cow3ESXmrTU', n:'불가리안 스플릿 스쿼트', muscle:'quads_glute', slot:'한다리', pattern:'lunge', s:'3 × 6–8 / 측', h:'3 × 10–12 / 측', tempo:'3-1-1', sq:'bulgarian split squat', flag:FLAG, fnote:'한다리. 상체 약간 앞으로(힙힌지) → 후면 힙 드라이브, 무릎 전방이동 최소화. systemic 부하 큼 → 단독 수행·충분한 휴식.', rom:'앞다리 깊은 굴곡으로 둔근 늘어난 위치 부하 + 편심성 통제. 뒷다리 고관절 굴곡근 스트레치도 동반.'},
     {id:'kb_swing', vid:'n1df4ASFeZU', n:'케틀벨 스윙', muscle:'posterior_chain', slot:'힌지(폭발)', pattern:'hinge', s:'4 × 8–10', h:'3 × 15–20', tempo:'폭발적', sq:'kettlebell swing', flag:FLAG, fnote:'후면 힙 드라이브 폭발력. 힙으로 던지고 팔은 줄. 스쿼트 아님. 호흡 부하 큼 → 단독 수행.'},
     {id:'tibialis_calf', vid:'wdOkFomQNp8', n:'티비알리스 + 카프 레이즈', muscle:'calf', slot:'종아리·정강이', pattern:'isolation', s:'각 3 × 12–15', h:'각 3 × 15–20', tempo:'2-2-1', sq:'calf raise', flag:FLAG, fnote:'정강이 강화로 발목 도르시플렉션 확보·무릎 전방이동 억제. (티비알리스 = 카프의 직접 길항근)', rom:'카프는 발뒤꿈치를 <b>깊이 떨어뜨려 바닥 스트레치 1~2초 정지</b> — 종아리 늘어난 구간 반응 큼. 발목 ROM 확보.'},
-    {id:'nordic', vid:'EnZZIaPCb8k', n:'노르딕 햄스트링 컬 (인클라인 벤치)', muscle:'hamstring_knee', slot:'햄(무릎굴곡)', pattern:'isolation', s:'3 × 4–6', h:'3 × 6–8', tempo:'4-0-1', sq:'nordic hamstring curl', flag:'강도 주의', fnote:'<b>인클라인 벤치 추천</b>(맨바닥보다 쉬움): 발목 고정, 패드가 무릎에 오게 하고 경사에서 시작해 <b>무릎에서만</b> 굽혔다 편다. 핵심 큐 = <b>무릎–고관절–어깨 일직선·둔근 꽉 조여 엉덩이 고정</b>. ⚠️ 엉덩이가 접히는 힙힌지가 되면 둔근·허리 운동이 되어 효과가 사라짐(같은 부위 자극 X). 익숙해지면 경사를 낮춰 난이도↑. 더 못 버티면 손으로 받쳐 보조.', rom:'<b>무릎이 거의 펴지는 하단에서 햄스트링이 가장 길게 늘어남 — 그 구간까지 편심성으로 버티기.</b> RDL(고관절 지배)이 못 채우는 무릎-지배 편심 자극. 근섬유 길이↑ → 햄스트링 유연성·부상예방.'},
+    {id:'nordic', vid:'EnZZIaPCb8k', n:'노르딕 햄스트링 컬 (인클라인 벤치)', muscle:'hamstring_knee', slot:'햄(무릎굴곡)', pattern:'isolation', s:'3 × 4–6', h:'3 × 6–8', tempo:'4-0-1', sq:'nordic hamstring curl', flag:'강도 주의', fnote:'<b>인클라인 벤치 추천</b>(맨바닥보다 쉬움): 발목 고정, 패드가 무릎에 오게 하고 경사에서 시작해 <b>무릎에서만</b> 굽혔다 편다. 핵심 큐 = <b>무릎–고관절–어깨 일직선·둔근 꽉 조여 엉덩이 고정</b>. ⚠️ 엉덩이가 접히는 힙힌지가 되면 둔근·허리 운동이 되어 효과가 사라짐(같은 부위 자극 X). 익숙해지면 경사를 낮춰 난이도↑. 더 못 버티면 손으로 받쳐 보조. <b>도저히 안 되면 레그컬(머신/밴드)로 대체</b> — 무릎 굴곡 자극은 동일.', rom:'<b>무릎이 거의 펴지는 하단에서 햄스트링이 가장 길게 늘어남 — 그 구간까지 편심성으로 버티기.</b> RDL(고관절 지배)이 못 채우는 무릎-지배 편심 자극. 근섬유 길이↑ → 햄스트링 유연성·부상예방.'},
   ]},
 };
 /* 영상: 모든 종목을 @DeltaBolic 채널 검색으로 연결(요구사항 #4). vid(영상ID) 있으면 직접, 없으면 검색폴백. */
@@ -367,6 +395,7 @@ const WARMUP_NOTE={
 /* ---------- 상태 ---------- */
 let app=null, auth=null, db=null, USER=null, built=false, online=navigator.onLine;
 let store={}, sessionMeta={}, bestMap={}, lastMap={};
+let _bestDayType=null, _bestDocs=null; /* loadBest 캐시: 같은 분할 내 날짜 이동 시 재조회 회피(SP-2) */
 let active='push', dayType='push', date=kstToday();
 let week='S', level='adv';
 function uid(){ return USER ? USER.uid : 'anon'; }
@@ -385,9 +414,9 @@ function boot(){
     if(user && ALLOW.length && !ALLOW.includes((user.email||'').toLowerCase())){
       const bad=user.email||''; await signOut(auth); USER=null; renderAuth('허용되지 않은 계정입니다: '+bad); return;
     }
-    USER=user||null; if(USER) showApp(); else renderAuth();
+    USER=user||null; _bestDayType=null; _bestDocs=null; if(USER) showApp(); else renderAuth(); /* SP-2: 계정 전환 시 best 캐시 무효화(교차계정 누출 방지) */
   });
-  window.addEventListener('online', ()=>{ online=true; setSync(); });
+  window.addEventListener('online', ()=>{ online=true; setSync(); if(USER){ _bestDayType=null; loadBest().then(refreshBestUI); } }); /* SP-2 A8: 오프라인 누적분 복귀 시 best 1회 보정 */
   window.addEventListener('offline', ()=>{ online=false; setSync(); });
 }
 
@@ -462,6 +491,19 @@ function toast(kind){ const el=$('#save'); if(!el) return;
   el.textContent = kind==='err'?'저장 실패' : kind==='off'?'오프라인 저장됨' : '저장됨';
   clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1200);
 }
+/* SP-3: 전체 기록 JSON 내보내기(백업) */
+async function exportData(){
+  if(!db||!USER){ alert('로그인이 필요합니다.'); return; }
+  try{
+    const qs=await getDocs(query(collection(db,'users',USER.uid,'sessions'), orderBy('date','desc')));
+    const out=[]; qs.forEach(s=>out.push(s.data()));
+    const payload={ exportedAt:new Date().toISOString(), uid:USER.uid, email:USER.email||'', count:out.length, sessions:out };
+    const blob=new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download='ppl-backup-'+kstToday()+'.json'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }catch(e){ alert('내보내기 실패: '+((e&&e.message)||e)); }
+}
 
 /* ---------- e1RM (고반복 과대추정 방지: 12회로 캡) ---------- */
 function e1rm(w,r){ w=parseFloat(w); r=parseFloat(r); if(!(w>0)||!(r>0)) return null; if(r<=1) return Math.round(w); return Math.round(w*(1+Math.min(r,12)/30)); }
@@ -471,31 +513,35 @@ function sref(d, dt){ return doc(db, 'users', USER.uid, 'sessions', d+'_'+dt); }
 
 /* ---------- 날짜별 로드 ---------- */
 async function loadDay(){
-  store={}; sessionMeta={}; bestMap={}; lastMap={};
-  render();
-  if(!db || !USER) return;
+  flushAll(); /* SP-1: 날짜/분할 전환 전, 펜딩 쓰기를 '캡처된' 세션으로 먼저 저장(스테일 라이트 방지) */
   const dd=date, dt=dayType;
+  if(!db || !USER){ store={}; sessionMeta={}; bestMap={}; lastMap={}; render(); return; }
   try{
     const [snap] = await Promise.all([ getDoc(sref(dd, dt)), loadBest() ]);
-    if(dd!==date || dt!==dayType) return;
+    if(dd!==date || dt!==dayType) return;             /* 빠른 전환 시 이전 fetch는 버림 */
     if(snap.exists()){
       const d=snap.data();
       store = normalizeEntries(d.entries, dt);
       sessionMeta = { condition:(d.condition??null), memo:(d.memo||''), bodyweight_kg:(d.bodyweight_kg??''), sleep_hours:(d.sleep_hours??''), is_deload:!!d.is_deload };
     } else { store={}; sessionMeta={}; }
-    render();
-  }catch(e){ /* 오프라인/오류 → 현재 화면 유지(Firestore 캐시) */ }
+    render(); /* 데이터 로드 후 1회만 렌더 → '빈 화면→채움' 깜빡임(이중 fade) 제거 */
+  }catch(e){ store={}; sessionMeta={}; bestMap={}; lastMap={}; render(); }
 }
 async function loadBest(){
   bestMap={}; lastMap={};
   if(!db || !USER) return;
   try{
-    const qs = await getDocs(query(collection(db,'users',USER.uid,'sessions'), where('dayType','==',dayType)));
-    const docs=[]; qs.forEach(s=>docs.push(s.data()));
+    let docs;
+    if(_bestDayType===dayType && _bestDocs){ docs=_bestDocs; }              /* SP-2: 같은 분할이면 캐시 재사용(네트워크 0) */
+    else{
+      const qs = await getDocs(query(collection(db,'users',USER.uid,'sessions'), where('dayType','==',dayType)));
+      docs=[]; qs.forEach(s=>docs.push(s.data()));
+      _bestDocs=docs; _bestDayType=dayType;
+    }
     const m={};
     for(const d of docs){ const ents=normalizeEntries(d.entries, dayType); for(const k in ents){ const e=e1rm(ents[k].w, ents[k].r); if(e && (!m[k]||e>m[k])) m[k]=e; } }
     bestMap=m;
-    // 지난 기록: 현재 날짜 이전 세션을 최신순으로, 종목별·블록별(S/H) 가장 최근 1건
+    // 지난 기록: 현재 날짜 이전 세션을 최신순으로, 종목별·블록별(S/H) 가장 최근 1건 (날짜 의존 → 매 호출 재계산)
     const prior=docs.filter(d=>d.date && d.date < date).sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
     const lm={};
     for(const d of prior){ const blk=(d.week_block==='H')?'H':'S'; const ents=normalizeEntries(d.entries, dayType);
@@ -504,38 +550,56 @@ async function loadBest(){
     lastMap=lm;
   }catch(e){}
 }
+/* SP-2: 저장 직후 best UI만 로컬 증분(저장당 full-scan 폐기). lastMap은 '현재 날짜 이전'이라 같은 날 입력에 무영향 → 미수정. */
+function bumpBest(key, d, dt){
+  if(dt!==dayType) return;
+  const rec=store[key]||{}; const e=e1rm(rec.w, rec.r);
+  if(e && (!bestMap[key] || e>bestMap[key])) bestMap[key]=e;
+  refreshBestUI();
+}
 
-/* ---------- 쓰기: 종목 (디바운스 → setDoc merge) ---------- */
+/* ---------- 쓰기: 종목 (디바운스 → setDoc merge) ----------
+   SP-1: 타이머에 {t, d, dt} 스냅샷 캡처. 디바운스 대기 중 날짜/분할이 바뀌어도
+   flushEntry는 '입력 시점' 세션에 저장(스테일 라이트 방지). 전역 date/dayType 재참조 금지. */
 const entryTimers={};
-function queueEntry(key){ clearTimeout(entryTimers[key]); entryTimers[key]=setTimeout(()=>flushEntry(key),700); }
-function flushEntryNow(key){ if(entryTimers[key]){ clearTimeout(entryTimers[key]); delete entryTimers[key]; } flushEntry(key); }
+function queueEntry(key){ const d=date, dt=dayType; if(entryTimers[key]) clearTimeout(entryTimers[key].t); entryTimers[key]={ t:setTimeout(()=>flushEntry(key),700), d, dt }; }
+function flushEntryNow(key){ const e=entryTimers[key]; if(e) clearTimeout(e.t); flushEntry(key); }
 async function flushEntry(key){
   if(!db || !USER) return;
+  const e=entryTimers[key]; const d=e?e.d:date, dt=e?e.dt:dayType; delete entryTimers[key];
   const o=store[key]||{};
   const entry={ w:(o.w||''), r:(o.r||''), rir:(o.rir||''), note:(o.note||'').slice(0,500), name:(o.name||'').slice(0,120) };
-  const payload={ date, dayType, week_block:week, level_mode:level, updatedAt:Date.now(), entries:{ [key]: entry } };
+  const payload={ date:d, dayType:dt, week_block:week, level_mode:level, updatedAt:Date.now(), entries:{ [key]: entry } };
   try{
-    const p=setDoc(sref(date, dayType), payload, {merge:true});
+    const p=setDoc(sref(d, dt), payload, {merge:true});
     if(!online){ toast('off'); p.catch(()=>{}); }
-    else { await p; toast('saved'); await loadBest(); refreshBestUI(); }
-  }catch(e){ toast('err'); }
+    else { await p; toast('saved'); }
+    bumpBest(key, d, dt); _bestDayType=null; /* SP-2: best UI 즉시 증분 + 캐시 무효화(다음 진입 시 재조회로 정확성) */
+  }catch(e2){ toast('err'); }
+}
+/* SP-1: 펜딩 쓰기(종목+메타)를 캡처된 세션으로 즉시 flush — loadDay 진입 시 store 리셋 전에 호출 */
+function flushAll(){
+  for(const key of Object.keys(entryTimers)){ clearTimeout(entryTimers[key].t); flushEntry(key); }
+  for(const mk of Object.keys(metaTimers)){ clearTimeout(metaTimers[mk].t); flushMeta(mk); }
 }
 
 /* ---------- 삭제: 종목 기록 / 세션 전체 ---------- */
 async function clearEntry(key){
-  if(entryTimers[key]){ clearTimeout(entryTimers[key]); delete entryTimers[key]; }
+  const e=entryTimers[key]; if(e){ clearTimeout(e.t); delete entryTimers[key]; } /* SP-1: 펜딩 타이머 취소(현재 카드 컨텍스트) */
   delete store[key];
   if(!db || !USER) return;
+  _bestDayType=null; /* SP-2 A2-inv: 삭제로 best가 내려갈 수 있음 → 캐시 무효화 후 재조회 */
   try{
     const p=updateDoc(sref(date, dayType), new FieldPath('entries', key), deleteField(), 'updatedAt', Date.now());
     if(!online){ toast('off'); p.catch(()=>{}); }
     else { await p; toast('saved'); await loadBest(); refreshBestUI(); }
-  }catch(e){ if(String((e&&e.code)||'').indexOf('not-found')<0) toast('err'); }
+  }catch(e2){ if(String((e2&&e2.code)||'').indexOf('not-found')<0) toast('err'); }
 }
 async function deleteSession(d, dt, rowEl){
   if(!db || !USER) return;
   if(rowEl) rowEl.remove();
   if(d===date && dt===dayType){ store={}; sessionMeta={}; bestMap={}; lastMap={}; }
+  if(dt===dayType) _bestDayType=null; /* SP-2 A2-inv: 삭제 후 best 재계산 위해 캐시 무효화 */
   try{
     const p=deleteDoc(doc(db,'users',USER.uid,'sessions', d+'_'+dt));
     if(!online){ toast('off'); p.catch(()=>{}); }
@@ -543,14 +607,15 @@ async function deleteSession(d, dt, rowEl){
   }catch(e){ toast('err'); }
 }
 
-/* ---------- 쓰기: 세션 메타 ---------- */
+/* ---------- 쓰기: 세션 메타 (SP-1: d/dt 스냅샷 캡처) ---------- */
 const metaTimers={};
-function queueMeta(patch,key){ Object.assign(sessionMeta,patch); clearTimeout(metaTimers[key]); metaTimers[key]=setTimeout(()=>flushMeta(patch),600); }
-async function flushMeta(patch){
+function queueMeta(patch,key){ Object.assign(sessionMeta,patch); const d=date, dt=dayType; if(metaTimers[key]) clearTimeout(metaTimers[key].t); metaTimers[key]={ t:setTimeout(()=>flushMeta(key),600), d, dt, patch }; }
+async function flushMeta(key){
   if(!db || !USER) return;
-  const payload={ date, dayType, week_block:week, level_mode:level, updatedAt:Date.now(), ...patch };
+  const m=metaTimers[key]; if(!m) return; const d=m.d, dt=m.dt, patch=m.patch; delete metaTimers[key];
+  const payload={ date:d, dayType:dt, week_block:week, level_mode:level, updatedAt:Date.now(), ...patch };
   try{
-    const p=setDoc(sref(date, dayType), payload, {merge:true});
+    const p=setDoc(sref(d, dt), payload, {merge:true});
     if(!online){ toast('off'); p.catch(()=>{}); }
     else { await p; toast('saved'); }
   }catch(e){ toast('err'); }
@@ -566,12 +631,14 @@ function metaLine(){
 }
 function setAccent(k){ document.documentElement.style.setProperty('--accent', (DAYS[k]?'var('+DAYS[k].color+')':'var(--push)')); }
 
-/* ---------- 운동 구성: 메인(직렬·긴 휴식) + 슈퍼세트(길항/비경쟁만) + 단독 ----------
-   슈퍼세트 안전 규칙: 같은 근육·코어는 묶지 않음(눈앞 캄캄 사고 방지). 수정 후 validateProgram가 런타임 검증. */
+/* ---------- 운동 구성: 메인(직렬·긴 휴식) + 슈퍼세트(비경쟁·비간섭만) + 단독 ----------
+   안전 규칙: ① 같은 근육 금지(validateProgram 검증) ② 전신·호흡 고부하 컴파운드 2개 동시 금지(눈앞 캄캄 사고 방지 — PLAN 배치로 관리).
+   push/pull 마지막 보조+코어는 저부하·비간섭이라 슈퍼세트로 묶어 휴식 시간 절약. */
 const PLAN = {
-  push: { main:[0,1], ss:[['A',[2,3]]], solo:[4,5] },   // ssA=인클라인(가슴상부)+레터럴(측면) · 삼두(4)·코어(5) 단독
-  pull: { main:[0,1], ss:[['A',[2,3]]], solo:[4,5] },   // ssA=시티드로우(등)+페이스풀(후면삼각) · 이두(4)·코어(5) 단독
-  legs: { main:[0,1], ss:[['A',[5,4]]], solo:[2,3], order:[0,1,2,3,5,4] }, // 사고페어 해체: 불가리안(2)·스윙(3) 단독 / ssA=노르딕(햄)+카프(종아리) 비경쟁
+  push: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },   // ssA=인클라인(가슴상부)+레터럴(측면) / ssB=삼두+코어(행잉) 비간섭
+  pull: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },   // ssA=시티드로우(등)+페이스풀(후면삼각) / ssB=이두+코어(팔로프) 비간섭
+  // ssA=불가리안(사두,2)+케틀벨스윙(후면,3) — 사용자 요청으로 재결합. 고부하 페어라 라운드휴식 120s+경고. / ssB=노르딕(햄)+카프(종아리)
+  legs: { main:[0,1], ss:[['A',[2,3],120,'⚠ 둘 다 전신·호흡 부하가 큼(과거 어지럼 사고 페어) — 라운드 휴식 넉넉히, 어지러우면 즉시 중단'],['B',[5,4]]], solo:[], order:[0,1,2,3,5,4] },
 };
 function exTier(k,i){ const p=PLAN[k]; if(!p) return 'main';
   if(p.main.includes(i)) return 'main';
@@ -589,14 +656,16 @@ function normalizeEntries(ents,k){
   for(const key in ents){ if(ids.has(key)) out[key]=ents[key]; } // 직접 id 키(최신 쓰기) 우선
   return out;
 }
-/* 프로그램 무결성 검증(렌더 시): order 누락/중복 + 슈퍼세트 같은근육/코어 금지 → 가시 에러 */
+/* 프로그램 무결성 검증(렌더 시): order 누락/중복 + 슈퍼세트 같은근육 금지 → 가시 에러.
+   (코어는 슈퍼세트 허용 — push/pull의 코어는 세션 끝 마무리라 길항·비간섭 페어로 묶어 시간 절약.
+    단, 레그의 고부하 컴파운드(스쿼트/RDL/BSS/스윙)는 설계상 단독 유지: 같은근육이 아니어도 전신·호흡 부하가
+    겹치면 '눈앞 캄캄' 위험 → 코드 규칙이 아니라 PLAN 배치로 관리.) */
 function validateProgram(k){
   const p=PLAN[k], ex=DAYS[k]&&DAYS[k].ex, issues=[]; if(!p||!ex) return issues;
   const order=p.order||ex.map((_,n)=>n); const seen=new Array(ex.length).fill(0);
   order.forEach(i=>{ if(i>=0&&i<ex.length) seen[i]++; else issues.push('order 잘못된 인덱스 '+i); });
   seen.forEach((c,i)=>{ if(c!==1) issues.push('종목 '+i+' "'+(ex[i]?ex[i].n:'?')+'" order '+c+'회(1회여야)'); });
   (p.ss||[]).forEach(([lab,arr])=>{
-    arr.forEach(i=>{ if(ex[i]&&ex[i].slot==='코어') issues.push('슈퍼세트 '+lab+'에 코어 "'+ex[i].n+'" 포함(금지)'); });
     for(let a=0;a<arr.length;a++) for(let b=a+1;b<arr.length;b++){ const ma=ex[arr[a]]&&ex[arr[a]].muscle, mb=ex[arr[b]]&&ex[arr[b]].muscle;
       if(ma&&ma===mb) issues.push('슈퍼세트 '+lab+': "'+ex[arr[a]].n+'" + "'+ex[arr[b]].n+'" 같은 근육('+ma+')'); }
   });
@@ -610,7 +679,10 @@ function exercisesHtml(k){
     if(t.indexOf('ss:')===0){
       const lab=t.slice(3); const g=[];
       while(p<order.length && exTier(k,order[p])==='ss:'+lab){ g.push(order[p]); p++; }
-      out+=`<div class="ssgroup"><div class="ss-h">🔗 슈퍼세트 ${lab}<span>두 종목 번갈아 1세트씩 · 종목 사이엔 쉬지 말고 · 라운드 끝에만 휴식</span><button class="restbtn" data-rest="${ssRestSec()}">⏱ 라운드 ${ssRestSec()}s</button></div>${g.map(idx=>exCard(k,ex[idx],idx,++num)).join('')}</div>`;
+      const ssE=((PLAN[k]&&PLAN[k].ss)||[]).find(([l])=>l===lab)||[];
+      const rsec = ssE[2] || ssRestSec();              /* ss 튜플 3번째=라운드 휴식 override(고부하 페어용) */
+      const warn = ssE[3] ? `<div class="ss-warn">${ssE[3]}</div>` : '';  /* 4번째=경고 문구 */
+      out+=`<div class="ssgroup"><div class="ss-h">🔗 슈퍼세트 ${lab}<span>두 종목 번갈아 1세트씩 · 종목 사이엔 쉬지 말고 · 라운드 끝에만 휴식</span><button class="restbtn" data-rest="${rsec}">⏱ 라운드 ${rsec}s</button></div>${warn}${g.map(idx=>exCard(k,ex[idx],idx,++num)).join('')}</div>`;
     } else { out+=exCard(k,ex[i],i,++num); p++; }
   }
   return out;
@@ -629,36 +701,45 @@ function sessionPanel(){
 function exCard(k,ex,i,num){
   const id=ex.id, rec=store[id]||{}, best=bestMap[id]||0, e1=e1rm(rec.w,rec.r);
   const _t=exTier(k,i);
-  const restBadge = _t==='main' ? `<button class="restbtn" data-rest="${restMainSec()}">⏱ 휴식 ${restMainSec()}s</button>`
-                  : _t==='solo' ? `<button class="restbtn" data-rest="${soloRestSec()}">⏱ 휴식 ${soloRestSec()}s</button>` : '';
-  const flag = ex.flag?`<span class="badge">${ex.flag}</span>`:'';
-  const romBadge = ex.rom?`<span class="badge rom">가동범위</span>`:'';
-  const note = ex.fnote?`<div class="flagnote">${ex.fnote}</div>`:'';
-  const romNote = ex.rom?`<div class="romnote"><b>ROM·유연성:</b> ${ex.rom}</div>`:'';
-  const cue = ex.c?`<div class="ex-cue">${ex.c}</div>`:'';
-  let lp=null, lpBlk=null, lpSame=false;
-  if(lastMap[id]){ if(lastMap[id][week]){ lp=lastMap[id][week]; lpBlk=week; lpSame=true; }
-    else { const ob=week==='S'?'H':'S'; if(lastMap[id][ob]){ lp=lastMap[id][ob]; lpBlk=ob; } } }
-  const lastRec = lp
-    ? `<div class="lastrec${lpSame?'':' alt'}">지난 ${lpBlk==='S'?'스트렝스':'하이퍼'}${lp.date?' · '+esc(lp.date.slice(5).replace('-','/')):''} · <b>${esc(lp.w||'?')}kg × ${esc(lp.r||'?')}회</b>${(lp.rir!==''&&lp.rir!=null)?' · RIR '+esc(lp.rir):''}${lpSame?'':' <span class="altn">(다른 블록)</span>'}<button class="lastfill" data-id="${id}">지난값 ⤵</button></div>`
-    : `<div class="lastrec none">이 종목 첫 기록 — 오늘이 기준점</div>`;
-  return `<div class="ex"><div class="ex-top">
-    <span class="ex-num">${String(num||i+1).padStart(2,'0')}</span>
-    <div class="ex-main"><div class="ex-name">${ex.n}${flag}${romBadge}</div>${cue}${note}${romNote}</div>
-    <div class="ex-side"><div class="ex-rx">${rx(ex)}</div>
-      ${ex.tempo?`<div class="tempo">⏱ ${/[0-9]/.test(ex.tempo)?'템포 '+ex.tempo:ex.tempo}</div>`:''}
-      ${restBadge}
-      <a class="yt" href="${vidHref(ex)}" target="_blank" rel="noopener">▶ 영상</a></div>
+  const restBadge = _t==='main' ? `<button class="chip act" type="button" data-rest="${restMainSec()}">⏱ ${restMainSec()}s</button>`
+                  : _t==='solo' ? `<button class="chip act" type="button" data-rest="${soloRestSec()}">⏱ ${soloRestSec()}s</button>` : '';
+  /* SP-4: 상태는 작은 점, 설명(큐·교정·ROM)은 ⓘ로 펼치는 접이 영역 → 카드 1초 내 흘긋 */
+  const dots = `${ex.flag?`<span class="dot flag" title="${esc(ex.flag)}"></span>`:''}${ex.rom?`<span class="dot rom" title="가동범위·유연성 포인트"></span>`:''}`;
+  const foldItems=[];
+  if(ex.flag) foldItems.push(`<div class="flagtag">${esc(ex.flag)}</div>`);
+  if(ex.c) foldItems.push(`<div class="ex-cue">${ex.c}</div>`);
+  if(ex.fnote) foldItems.push(`<div class="flagnote">${ex.fnote}</div>`);
+  if(ex.rom) foldItems.push(`<div class="romnote"><b>ROM·유연성:</b> ${ex.rom}</div>`);
+  const hasFold=foldItems.length>0;
+  const foldBtn = hasFold?`<button class="exi" data-fold="${id}" aria-expanded="false" aria-controls="fold-${id}" aria-label="${esc(ex.n)} 설명 보기" title="설명·큐·가동범위 보기">ⓘ</button>`:'';
+  const fold = hasFold?`<div class="exfold" id="fold-${id}" hidden>${foldItems.join('')}</div>`:'';
+  /* 지난 값(같은 블록 우선)을 입력칸 placeholder로 회색 예시 표시 — 별도 행/자동채움 버튼 없음 */
+  let lp=null;
+  if(lastMap[id]){ lp = lastMap[id][week] || lastMap[id][week==='S'?'H':'S'] || null; }
+  const phW = (lp && lp.w!=null && lp.w!=='') ? esc(lp.w) : 'kg';
+  const phR = (lp && lp.r!=null && lp.r!=='') ? esc(lp.r) : '회';
+  const phRir = (lp && lp.rir!=null && lp.rir!=='') ? esc(lp.rir) : '0~5';
+  return `<div class="ex">
+    <div class="ex-top">
+      <span class="ex-num">${String(num||i+1).padStart(2,'0')}</span>
+      <div class="ex-name"><span class="exn-t">${ex.n}</span>${dots}</div>
+      ${foldBtn}
     </div>
-    ${lastRec}
+    ${fold}
+    <div class="ex-rxline"><div class="ex-rx">${rx(ex)}</div></div>
+    <div class="ex-meta">
+      ${ex.tempo?`<span class="chip info">${/[0-9]/.test(ex.tempo)?'템포 '+ex.tempo:ex.tempo}</span>`:''}
+      ${restBadge}
+      <a class="chip vid" href="${vidHref(ex)}" target="_blank" rel="noopener">▶ 영상</a>
+    </div>
     <div class="log">
-      <label>무게 <input data-id="${id}" data-f="w" inputmode="decimal" placeholder="kg" value="${esc(rec.w||'')}"></label>
-      <label>반복 <input data-id="${id}" data-f="r" inputmode="numeric" placeholder="회" value="${esc(rec.r||'')}"></label>
-      <label>RIR <input data-id="${id}" data-f="rir" inputmode="numeric" placeholder="0~5" value="${esc(rec.rir||'')}"></label>
-      <div class="e1rm" data-e="${id}">e1RM <b>${e1?e1+'kg':'—'}</b><span class="best">${best?' · 최고 '+best:''}</span></div>
+      <label>무게 <input data-id="${id}" data-f="w" inputmode="decimal" placeholder="${phW}" value="${esc(rec.w||'')}"></label>
+      <label>반복 <input data-id="${id}" data-f="r" inputmode="numeric" placeholder="${phR}" value="${esc(rec.r||'')}"></label>
+      <label>RIR <input data-id="${id}" data-f="rir" inputmode="numeric" placeholder="${phRir}" value="${esc(rec.rir||'')}"></label>
+      <div class="e1rm${e1?'':' hide'}" data-e="${id}" aria-live="polite">e1RM <b>${e1?e1+'kg':'—'}</b><span class="best">${best?' · 최고 '+best:''}</span></div>
     </div>
     <div class="log" style="border-top:0;padding-top:0;margin-top:6px">
-      <label style="flex:1">메모 <input class="note" data-id="${id}" data-f="note" placeholder="예: 왼어깨 뻐근 / 인클라인 선택" value="${esc(rec.note||'')}"></label>
+      <label style="flex:1">메모 <input class="note" data-id="${id}" data-f="note" placeholder="예: 왼어깨 뻐근 / 폼 큐" value="${esc(rec.note||'')}"></label>
       <button class="entryclear" data-id="${id}" type="button" title="이 종목 오늘 기록 지우기">✕ 지우기</button>
     </div></div>`;
 }
@@ -667,6 +748,7 @@ function refreshBestUI(){
     const id=el.dataset.e, rec=store[id]||{}, e1=e1rm(rec.w,rec.r), best=bestMap[id]||0;
     el.querySelector('b').textContent=e1?e1+'kg':'—';
     el.querySelector('.best').textContent=best?' · 최고 '+best:'';
+    el.classList.toggle('hide', !e1); /* SP-4: 값 없으면 e1RM 줄 숨김 */
   });
 }
 function warmupBlock(k){
@@ -677,7 +759,8 @@ function warmupBlock(k){
 }
 function renderDay(k){
   const d=DAYS[k], cur=sessionMeta.condition||0;
-  const emos=[['😣',1],['😐',2],['😀',3]].map(([e,v])=>`<button data-c="${v}" class="${cur===v?'on':''}">${e}</button>`).join('');
+  const emoLab={1:'나쁨',2:'보통',3:'좋음'};
+  const emos=[['😣',1],['😐',2],['😀',3]].map(([e,v])=>`<button data-c="${v}" class="${cur===v?'on':''}" aria-label="컨디션 ${emoLab[v]}" aria-pressed="${cur===v}">${e}</button>`).join('');
   const issues=validateProgram(k); if(issues.length) console.error('[PPL] 프로그램 무결성 오류('+k+'):', issues);
   const banner = issues.length ? `<div style="background:rgba(224,122,122,.12);border:1px solid var(--bad);color:var(--bad);border-radius:8px;padding:8px 11px;margin:2px 0 10px;font-size:12px;font-weight:700">⚠ 프로그램 설정 오류(코드 확인 필요): ${esc(issues.join(' · '))}</div>` : '';
   let h=`<div class="dayhead"><span class="num">${d.name.toUpperCase()}</span><h2>${d.kr}</h2>
@@ -687,14 +770,18 @@ function renderDay(k){
     ${warmupBlock(k)}
     <div class="meta">${metaLine()}</div>`;
   h+=exercisesHtml(k);
-  h+=`<div class="cardio"><b>마무리 유산소</b> — Zone 2(편하게 대화 가능한 강도) <b>15분</b>. 회복·심혈관 목적. 본운동 마지막에(=능동 쿨다운).</div>`;
+  const cardioNote=(k==='legs' && week==='S')
+    ? '<b>마무리 유산소</b> — 스트렝스 주 레그데이는 60분이 빠듯하니 <b>유산소는 다른 날로 분리(또는 생략)</b>. 정 빠듯하면 스쿼트 백오프는 격주로(무게·메인 볼륨은 유지).'
+    : '<b>마무리 유산소</b> — Zone 2(편하게 대화 가능한 강도) <b>15분</b>. 회복·심혈관 목적. 본운동 마지막에(=능동 쿨다운).';
+  h+=`<div class="cardio">${cardioNote}</div>`;
   return h;
 }
 
 /* ---------- 기록(히스토리) 탭 ---------- */
 async function renderHistory(){
   const main=$('#main');
-  main.innerHTML=`<section class="view"><div class="dayhead"><span class="num">HISTORY</span><h2>기록</h2></div><div id="hlist" class="hempty">불러오는 중…</div></section>`;
+  main.innerHTML=`<section class="view"><div class="dayhead"><span class="num">HISTORY</span><h2>기록</h2><button id="hExport" class="hexport" type="button">⬇ 내보내기(JSON)</button></div><div id="hlist" class="hempty">불러오는 중…</div></section>`;
+  const exb=$('#hExport'); if(exb) exb.addEventListener('click', exportData); /* SP-3: 백업 내보내기 */
   if(!db||!USER){ $('#hlist').textContent='로그인이 필요합니다.'; return; }
   try{
     const qs=await getDocs(query(collection(db,'users',USER.uid,'sessions'), orderBy('date','desc'), limit(90)));
@@ -763,16 +850,31 @@ function renderEvidence(){return `
     <span class="cut">· 고중량 2분 휴식 고정</span> — 최대근력엔 3분+ 필요<br>
     <span class="cut">· 부위당 주 1회</span> — PPL 2회로 대체<br>
     <span class="cut">· "근육 완전 파괴" 프레임</span> — 비대 주동인은 손상이 아니라 기계적 장력</p></div>
-  <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">가동범위 — 늘어난 길이 부하</h3><p>전체적으론 풀 ROM이 약간 유리(차이 사소~작음, Wolf 2023)하지만, <span class="k">긴 근육 길이의 부분반복은 풀 ROM과 최소한 동등하거나 약간의 비대 이점</span>(Wolf 2023·2024/25). 삼두는 오버헤드(장두 신장)가 중립보다 비대 큼. 늘어난 위치 부하가 핵심.</p></div>
+  <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">가동범위 — 늘어난 길이 부하</h3><p>전체적으론 풀 ROM이 약간 유리(차이 사소~작음, Wolf 2023)하지만, <span class="k">긴 근육 길이의 부분반복은 풀 ROM과 최소한 동등하거나 약간의 비대 이점</span>(Wolf 2023·2024/25). 삼두는 오버헤드(장두 신장)가 중립보다 비대에 유리(특히 비숙련자; 숙련자는 풀ROM과 비슷할 수 있음). 늘어난 위치 부하가 핵심.</p></div>
   <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">길항근 훈련 → 유연성</h3><p><span class="k">상호억제(신경·즉각):</span> 길항근 수축 → 타이트한 주동근 반사적 이완(능동/PNF 스트레칭 원리). <span class="k">근력 훈련(구조·지속):</span> 풀 ROM 근력 훈련은 스트레칭과 비슷하게 ROM을 늘리고 근력까지 추가. 늘어난 길이의 편심성은 근섬유 길이(직렬 근절)를 늘려 능동 가동범위 확장(NHE 9주: 근섬유 +19~33%) — 단 늘어난 길이일 때만, 가역적.</p>
     <p class="src">참고: Wolf et al.(2023, ROM 메타); 늘어난 구간 부분반복(Wolf 2024/25, Pedrosa 2022); 근력 vs 스트레칭 ROM(Afonso 2021 메타·RCT 2024); 편심성 근섬유 길이(Franchi·NHE 연구). e1RM은 고반복에서 부정확해 12회로 캡한 추정치. 일반 가이드이며 개인 상태에 맞춰 조정.</p></div>`;}
 
-const TABS=[['push','Push'],['pull','Pull'],['legs','Legs'],['history','기록'],['principles','원칙'],['behavior','행동·회복'],['evidence','근거']];
+/* 메인 탭은 실사용 4개만. 원칙·행동·근거는 '가이드' 버튼으로 분리(탭 넘침 해소). */
+const TABS=[['push','Push'],['pull','Pull'],['legs','Legs'],['history','기록']];
+let guideTab='principles', prevBeforeGuide='push'; /* 가이드 토글: 닫을 때 돌아갈 직전 화면 */
+function renderGuide(){
+  const subs=[['principles','원칙'],['behavior','행동·회복'],['evidence','근거']];
+  const nav=subs.map(([k,l])=>`<button class="gtab${guideTab===k?' on':''}" data-gtab="${k}" type="button">${l}</button>`).join('');
+  const body = guideTab==='behavior'?renderBehavior() : guideTab==='evidence'?renderEvidence() : renderPrinciples();
+  return `<div class="gtabs">${nav}</div>${body}`;
+}
 function build(){
-  $('#tabs').innerHTML = TABS.map(([k,l])=>`<button class="tab" data-go="${k}">${l}</button>`).join('');
-  $('#tabs').addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b) go(b.dataset.go); });
-  $('#weekSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-week]'); if(b){ week=b.dataset.week; localStorage.setItem(lk('week'),week); render(); }});
+  const tabsEl=$('#tabs'); tabsEl.setAttribute('role','tablist');
+  // Str/Hyp 알약 토글(맨 앞, STR|HYP) + P/P/L·기록 탭을 한 줄에
+  tabsEl.innerHTML = `<div class="wktoggle" id="weekToggle" role="group" aria-label="주간 모드(스트렝스/하이퍼트로피)"><button type="button" data-week="S">STR</button><button type="button" data-week="H">HYP</button></div>`
+    + TABS.map(([k,l])=>`<button class="tab" data-go="${k}" role="tab" id="tab-${k}" aria-selected="false">${l}</button>`).join('');
+  tabsEl.addEventListener('click',e=>{
+    const wb=e.target.closest('[data-week]'); if(wb){ week=wb.dataset.week; localStorage.setItem(lk('week'),week); render(); return; }
+    const b=e.target.closest('[data-go]'); if(b) go(b.dataset.go);
+  });
+  const mainEl=$('#main'); if(mainEl){ mainEl.setAttribute('role','tabpanel'); mainEl.setAttribute('tabindex','-1'); } /* SP-5 */
   $('#lvlSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-lvl]'); if(b){ level=b.dataset.lvl; localStorage.setItem(lk('level'),level); render(); }});
+  $('#guideBtn').addEventListener('click',()=>{ if(active==='guide'){ go(prevBeforeGuide); } else { prevBeforeGuide=active; go('guide'); } }); /* 토글: 다시 누르면 직전 화면으로 닫힘 */
   // 날짜 네비
   $('#dPrev').addEventListener('click',()=>{ date=shiftDate(date,-1); setDateInput(); if(isDay()) loadDay(); else render(); });
   $('#dNext').addEventListener('click',()=>{ date=shiftDate(date, 1); setDateInput(); if(isDay()) loadDay(); else render(); });
@@ -785,7 +887,7 @@ function build(){
   main.addEventListener('input',e=>{
     const t=e.target;
     if(t.matches('.log input')){ const id=t.dataset.id, f=t.dataset.f; (store[id]=store[id]||{})[f]=t.value;
-      if(f==='w'||f==='r'){ const card=t.closest('.ex'); const el=card&&card.querySelector('.e1rm b'); if(el){ const e1=e1rm(store[id].w,store[id].r); el.textContent=e1?e1+'kg':'—'; } }
+      if(f==='w'||f==='r'){ const card=t.closest('.ex'); const box=card&&card.querySelector('.e1rm'); if(box){ const e1=e1rm(store[id].w,store[id].r); box.querySelector('b').textContent=e1?e1+'kg':'—'; box.classList.toggle('hide', !e1); } }
       queueEntry(id);
     } else if(t.id==='memo'){ queueMeta({memo:t.value.slice(0,2000)},'memo'); }
   });
@@ -796,21 +898,17 @@ function build(){
   });
   main.addEventListener('blur',e=>{ if(e.target.matches('.log input')) flushEntryNow(e.target.dataset.id); }, true);
   main.addEventListener('click',e=>{
-    const rb=e.target.closest('.restbtn');
+    const gt=e.target.closest('.gtab');                             /* 가이드 하위탭 */
+    if(gt){ guideTab=gt.dataset.gtab; render(); return; }
+    const fi=e.target.closest('.exi');                              /* SP-4: 설명 접이 토글 */
+    if(fi){ const id=fi.dataset.fold, box=document.getElementById('fold-'+id), open=fi.getAttribute('aria-expanded')==='true';
+      if(box) box.hidden=open; fi.setAttribute('aria-expanded', String(!open)); return; }
+    const rb=e.target.closest('[data-rest]');
     if(rb){ const sec=parseInt(rb.dataset.rest,10)||90; tSet(sec); const fp=$('#fpanel'); if(fp) fp.classList.add('open'); tToggle(); return; }
-    const lf=e.target.closest('.lastfill');
-    if(lf){ const id=lf.dataset.id, lm=lastMap[id]; if(lm){ const lp=lm[week]||lm[week==='S'?'H':'S'];
-      if(lp){ const card=lf.closest('.ex');
-        store[id]=store[id]||{};
-        const setF=(f,v)=>{ const el=card&&card.querySelector(".log input[data-f='"+f+"']"); const val=(v==null?'':String(v)); if(el) el.value=val; store[id][f]=val; };
-        setF('w',lp.w); setF('r',lp.r); setF('rir',lp.rir);
-        const e1El=card&&card.querySelector('.e1rm b'); if(e1El){ const e1=e1rm(store[id].w,store[id].r); e1El.textContent=e1?e1+'kg':'—'; }
-        queueEntry(id);
-      } } return; }
     const ec=e.target.closest('.entryclear');
     if(ec){ const id=ec.dataset.id; if(!confirm('이 종목의 오늘 기록을 지울까요?')) return;
       const card=ec.closest('.ex');
-      if(card){ card.querySelectorAll('.log input').forEach(inp=>inp.value=''); const e1El=card.querySelector('.e1rm b'); if(e1El) e1El.textContent='—'; }
+      if(card){ card.querySelectorAll('.log input').forEach(inp=>inp.value=''); const box=card.querySelector('.e1rm'); if(box){ box.querySelector('b').textContent='—'; box.classList.add('hide'); } }
       clearEntry(id); return; }
     const c=e.target.closest('.cond [data-c]');
     if(c){ const v=parseInt(c.dataset.c,10); sessionMeta.condition = (sessionMeta.condition===v?null:v); queueMeta({condition:sessionMeta.condition},'cond'); render(); return; }
@@ -820,15 +918,18 @@ function build(){
   initTools();
 }
 function isDay(){ return active==='push'||active==='pull'||active==='legs'; }
-function setDateInput(){ const i=$('#dInput'); if(i) i.value=date; const w=$('#dWeekday'); if(w) w.textContent=weekdayKr(date)+'요일'+(date===kstToday()?' · 오늘':''); }
-function go(k){ active=k; if(isDay()){ dayType=k; setAccent(k); loadDay(); } else { setAccent('push'); render(); } window.scrollTo({top:0,behavior:'smooth'}); }
+function setDateInput(){ const i=$('#dInput'); if(i) i.value=date; const today=kstToday(), past=date<today, future=date>today;
+  const w=$('#dWeekday'); if(w) w.innerHTML=weekdayKr(date)+'요일'+(date===today?' · <span style="color:var(--accent);font-weight:800">오늘</span>':past?' · <span class="dw-warn">⚠ 지난 날짜</span>':future?' · <span class="dw-warn">⚠ 미래 날짜</span>':'');
+  const db=$('#datebar'); if(db) db.classList.toggle('pastdate', past||future); }
+function go(k){ active=k; if(isDay()){ dayType=k; setAccent(k); loadDay(); } else { setAccent('push'); render(); } window.scrollTo({top:0,behavior:'smooth'}); const m=$('#main'); if(m){ m.setAttribute('aria-labelledby', document.getElementById('tab-'+k)?'tab-'+k:'guideBtn'); m.focus({preventScroll:true}); } } /* SP-5: 탭패널 포커스 이동 */
 function render(){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.go===active));
-  document.querySelectorAll('#weekSeg button').forEach(b=>b.classList.toggle('on',b.dataset.week===week));
+  document.querySelectorAll('.tab').forEach(t=>{ const on=t.dataset.go===active; t.classList.toggle('on',on); t.setAttribute('aria-selected', String(on)); }); /* SP-5 */
+  document.querySelectorAll('#weekToggle button').forEach(b=>{ const on=b.dataset.week===week; b.classList.toggle('on',on); b.setAttribute('aria-pressed', String(on)); }); /* 알약 토글 활성측만 색상 */
   document.querySelectorAll('#lvlSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lvl===level));
-  $('#datebar').style.display = isDay() ? 'flex' : 'none';
+  const gb=$('#guideBtn'); if(gb) gb.classList.toggle('on', active==='guide');
+  $('#datebar').style.display = 'flex'; /* 모든 탭에서 날짜창 유지(기록/가이드에서도 위치 일관) */
   if(active==='history'){ renderHistory(); return; }
-  const body = active==='principles'?renderPrinciples() : active==='behavior'?renderBehavior() : active==='evidence'?renderEvidence() : renderDay(active);
+  const body = active==='guide' ? renderGuide() : renderDay(active);
   $('#main').innerHTML = `<section class="view">${body}</section>`;
 }
 
