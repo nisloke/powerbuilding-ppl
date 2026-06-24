@@ -149,6 +149,7 @@
   .ss-h span{flex:1 1 100%;order:3;font-weight:600;font-size:11px;color:var(--muted)}
   .restbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--rom);border-radius:7px;padding:8px 12px;min-height:38px;font-family:var(--mono);font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
   .restbtn:hover{border-color:var(--rom)} .restbtn:active{transform:scale(.96)}
+  .ss-warn{font-size:11.5px;color:var(--flag);background:rgba(232,194,90,.08);border:1px solid rgba(232,194,90,.25);border-radius:7px;padding:6px 9px;margin:0 4px 9px;word-break:keep-all}
 
   .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:20px;vertical-align:middle;margin-left:6px;background:rgba(232,194,90,.13);color:var(--flag);border:1px solid rgba(232,194,90,.3);word-break:keep-all;white-space:nowrap}
   .flagnote{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12.5px;background:rgba(232,194,90,.07);border-left:2px solid var(--flag);color:#D8C896}
@@ -636,7 +637,8 @@ function setAccent(k){ document.documentElement.style.setProperty('--accent', (D
 const PLAN = {
   push: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },   // ssA=인클라인(가슴상부)+레터럴(측면) / ssB=삼두+코어(행잉) 비간섭
   pull: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },   // ssA=시티드로우(등)+페이스풀(후면삼각) / ssB=이두+코어(팔로프) 비간섭
-  legs: { main:[0,1], ss:[['A',[5,4]]], solo:[2,3], order:[0,1,2,3,5,4] }, // ssA=노르딕(햄)+카프(종아리) 비경쟁 / 불가리안(2)·스윙(3)은 고부하라 단독 유지(사고페어)
+  // ssA=불가리안(사두,2)+케틀벨스윙(후면,3) — 사용자 요청으로 재결합. 고부하 페어라 라운드휴식 120s+경고. / ssB=노르딕(햄)+카프(종아리)
+  legs: { main:[0,1], ss:[['A',[2,3],120,'⚠ 둘 다 전신·호흡 부하가 큼(과거 어지럼 사고 페어) — 라운드 휴식 넉넉히, 어지러우면 즉시 중단'],['B',[5,4]]], solo:[], order:[0,1,2,3,5,4] },
 };
 function exTier(k,i){ const p=PLAN[k]; if(!p) return 'main';
   if(p.main.includes(i)) return 'main';
@@ -677,7 +679,10 @@ function exercisesHtml(k){
     if(t.indexOf('ss:')===0){
       const lab=t.slice(3); const g=[];
       while(p<order.length && exTier(k,order[p])==='ss:'+lab){ g.push(order[p]); p++; }
-      out+=`<div class="ssgroup"><div class="ss-h">🔗 슈퍼세트 ${lab}<span>두 종목 번갈아 1세트씩 · 종목 사이엔 쉬지 말고 · 라운드 끝에만 휴식</span><button class="restbtn" data-rest="${ssRestSec()}">⏱ 라운드 ${ssRestSec()}s</button></div>${g.map(idx=>exCard(k,ex[idx],idx,++num)).join('')}</div>`;
+      const ssE=((PLAN[k]&&PLAN[k].ss)||[]).find(([l])=>l===lab)||[];
+      const rsec = ssE[2] || ssRestSec();              /* ss 튜플 3번째=라운드 휴식 override(고부하 페어용) */
+      const warn = ssE[3] ? `<div class="ss-warn">${ssE[3]}</div>` : '';  /* 4번째=경고 문구 */
+      out+=`<div class="ssgroup"><div class="ss-h">🔗 슈퍼세트 ${lab}<span>두 종목 번갈아 1세트씩 · 종목 사이엔 쉬지 말고 · 라운드 끝에만 휴식</span><button class="restbtn" data-rest="${rsec}">⏱ 라운드 ${rsec}s</button></div>${warn}${g.map(idx=>exCard(k,ex[idx],idx,++num)).join('')}</div>`;
     } else { out+=exCard(k,ex[i],i,++num); p++; }
   }
   return out;
