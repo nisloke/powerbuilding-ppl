@@ -83,7 +83,7 @@
   .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:14px;padding:11px 6px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
   .tab:hover{color:var(--text)} .tab.on{color:var(--text);border-bottom-color:var(--accent)}
   /* Str/Hyp 토글: 탭 줄 맨 앞, 필 형태 스위치(라벨이 현재 모드) */
-  .wktoggle{background:var(--accent);color:#15171c;border:0;border-radius:8px;padding:9px 13px;font-family:var(--sans);font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;margin-bottom:6px}
+  .wktoggle{background:var(--accent);color:#15171c;border:0;border-radius:8px;padding:9px 8px;width:58px;min-width:58px;text-align:center;font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.04em;cursor:pointer;white-space:nowrap;margin-bottom:6px}
   /* 가이드 하위탭(원칙·행동·근거) */
   .gtabs{display:flex;gap:4px;margin:0 0 14px;flex-wrap:wrap}
   .gtab{background:var(--panel);border:1px solid var(--line);color:var(--muted);font-family:var(--sans);font-weight:700;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer}
@@ -852,7 +852,7 @@ function renderGuide(){
 function build(){
   const tabsEl=$('#tabs'); tabsEl.setAttribute('role','tablist');
   // Str/Hyp 토글(맨 앞) + P/P/L·기록 탭을 한 줄에
-  tabsEl.innerHTML = `<button class="wktoggle" id="weekToggle" type="button" aria-label="스트렝스/하이퍼트로피 전환">스트렝스</button>`
+  tabsEl.innerHTML = `<button class="wktoggle" id="weekToggle" type="button" aria-label="스트렝스/하이퍼트로피 전환">STR</button>`
     + TABS.map(([k,l])=>`<button class="tab" data-go="${k}" role="tab" id="tab-${k}" aria-selected="false">${l}</button>`).join('');
   tabsEl.addEventListener('click',e=>{
     if(e.target.closest('#weekToggle')){ week=(week==='S'?'H':'S'); localStorage.setItem(lk('week'),week); render(); return; }
@@ -910,7 +910,7 @@ function setDateInput(){ const i=$('#dInput'); if(i) i.value=date; const today=k
 function go(k){ active=k; if(isDay()){ dayType=k; setAccent(k); loadDay(); } else { setAccent('push'); render(); } window.scrollTo({top:0,behavior:'smooth'}); const m=$('#main'); if(m){ m.setAttribute('aria-labelledby', document.getElementById('tab-'+k)?'tab-'+k:'guideBtn'); m.focus({preventScroll:true}); } } /* SP-5: 탭패널 포커스 이동 */
 function render(){
   document.querySelectorAll('.tab').forEach(t=>{ const on=t.dataset.go===active; t.classList.toggle('on',on); t.setAttribute('aria-selected', String(on)); }); /* SP-5 */
-  const wt=$('#weekToggle'); if(wt){ wt.textContent = week==='S'?'스트렝스':'하이퍼'; wt.title = '현재 '+(week==='S'?'스트렝스':'하이퍼트로피')+' 주 (탭하여 전환)'; }
+  const wt=$('#weekToggle'); if(wt){ wt.textContent = week==='S'?'STR':'HYP'; wt.title = '현재 '+(week==='S'?'스트렝스':'하이퍼트로피')+' 주 (탭하여 전환)'; }
   document.querySelectorAll('#lvlSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lvl===level));
   const gb=$('#guideBtn'); if(gb) gb.classList.toggle('on', active==='guide');
   $('#datebar').style.display = isDay() ? 'flex' : 'none';
