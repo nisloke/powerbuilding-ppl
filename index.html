@@ -68,10 +68,6 @@
   .seg .lbl{font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.06em;padding:0 10px;text-transform:uppercase}
   .seg button{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:12.5px;padding:8px 13px;cursor:pointer}
   .seg button.on{background:var(--accent);color:#15171c}
-  /* Str/Hyp 토글: 자주 바꾸므로 탭 바로 위에 크게 */
-  .weekbar{margin:14px 0 0}
-  .seg.big{width:100%}
-  .seg.big button{flex:1;padding:11px 13px;font-size:13.5px}
   .guidebtn{margin-left:auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:8px 13px;font-family:var(--sans);font-weight:700;font-size:12.5px;cursor:pointer}
   .guidebtn.on{border-color:var(--accent);color:var(--accent)}
 
@@ -83,9 +79,11 @@
   .datebar .dw{font-size:10.5px;color:var(--faint);font-weight:700}
   .datebar .today{flex:none;font-size:11px;font-weight:700;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0 12px;height:42px;cursor:pointer}
 
-  .tabs{display:flex;gap:3px;margin:12px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-  .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:14px;padding:11px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs{display:flex;gap:6px;margin:14px 0;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:14px;padding:11px 6px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
   .tab:hover{color:var(--text)} .tab.on{color:var(--text);border-bottom-color:var(--accent)}
+  /* Str/Hyp 토글: 탭 줄 맨 앞, 필 형태 스위치(라벨이 현재 모드) */
+  .wktoggle{background:var(--accent);color:#15171c;border:0;border-radius:8px;padding:9px 13px;font-family:var(--sans);font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;margin-bottom:6px}
   /* 가이드 하위탭(원칙·행동·근거) */
   .gtabs{display:flex;gap:4px;margin:0 0 14px;flex-wrap:wrap}
   .gtab{background:var(--panel);border:1px solid var(--line);color:var(--muted);font-family:var(--sans);font-weight:700;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer}
@@ -155,15 +153,10 @@
   .log input{width:58px;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 8px;font-family:var(--mono);font-size:13px;text-align:center}
   .log input.note{width:130px;text-align:left;font-family:var(--sans);font-size:12px}
   .log input:focus{outline:none;border-color:var(--accent)}
+  .log input::placeholder{color:var(--faint);opacity:1} /* 지난 값 예시(회색) */
   .e1rm{margin-left:auto;font-size:11.5px;color:var(--muted);font-family:var(--mono);background:var(--panel2);border-radius:7px;padding:6px 10px;white-space:nowrap}
   .e1rm b{color:var(--rom);font-size:13.5px}
   .e1rm .best{color:var(--faint)}
-  .lastrec{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-family:var(--mono)}
-  .lastrec b{color:var(--text);font-size:12.5px}
-  .lastrec.alt{opacity:.9} .lastrec.none{color:var(--faint);font-family:var(--sans)}
-  .lastrec .altn{color:var(--flag)}
-  .lastfill{margin-left:auto;background:var(--bg);border:1px solid var(--line);color:var(--accent);border-radius:6px;padding:4px 9px;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
-  .lastfill:hover{border-color:var(--accent)} .lastfill:active{transform:scale(.95)}
   .entryclear{background:none;border:1px solid var(--line);color:var(--faint);border-radius:7px;padding:6px 9px;font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex:none}
   .entryclear:hover{border-color:var(--bad);color:var(--bad)}
   .hdel{background:none;border:1px solid var(--line);color:var(--faint);border-radius:7px;padding:3px 9px;font-size:13px;cursor:pointer;line-height:1;flex:none}
@@ -205,9 +198,6 @@
   .save{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 16px;border-radius:30px;font-size:12.5px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:60}
   .save.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .save.err{border-color:var(--bad);color:var(--bad)} .save.off{border-color:var(--flag);color:var(--flag)}
-  /* SP-3: 실행취소 바 */
-  .undobar{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--accent);color:var(--text);padding:9px 10px 9px 16px;border-radius:30px;font-size:12.5px;font-weight:600;z-index:70;display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(0,0,0,.45);max-width:calc(100vw - 32px)}
-  .undobar button{background:var(--accent);color:#15171c;border:0;border-radius:20px;padding:7px 14px;font-family:var(--sans);font-weight:800;font-size:12px;cursor:pointer;flex:none}
   /* SP-3: 지난/미래 날짜 경고 */
   .dw-warn{color:var(--flag);font-weight:800}
   .datebar.pastdate{border-color:var(--flag)}
@@ -270,18 +260,12 @@
     <button class="today" id="dToday">오늘</button>
   </div>
 
-  <!-- Str/Hyp: 매 사이클 전환 → P/P/L 탭 바로 앞에 배치 -->
-  <div class="weekbar">
-    <div class="seg big" id="weekSeg"><span class="lbl">이번 주</span>
-      <button data-week="S">스트렝스</button><button data-week="H">하이퍼트로피</button></div>
-  </div>
-
+  <!-- Str/Hyp 토글 + P/P/L·기록 탭을 한 줄에(toggle는 build에서 prepend) -->
   <nav class="tabs" id="tabs"></nav>
   <main id="main"></main>
 </div>
 
 <div class="save" id="save">저장됨</div>
-<div class="undobar" id="undobar" hidden><span id="undoMsg"></span><button id="undoBtn" type="button">실행취소</button></div>
 
 <button class="fab" id="fab" aria-label="휴식 타이머" hidden>⏱</button>
 <div class="fpanel" id="fpanel" hidden>
@@ -497,24 +481,6 @@ function toast(kind){ const el=$('#save'); if(!el) return;
   el.className='save show'+(kind==='err'?' err':kind==='off'?' off':'');
   el.textContent = kind==='err'?'저장 실패' : kind==='off'?'오프라인 저장됨' : '저장됨';
   clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1200);
-}
-/* SP-3: 실행취소 바 (lastfill 등 위험 액션 직후 복구 경로) */
-let undoT, undoFn=null;
-function showUndo(msg, fn){ undoFn=fn; const bar=$('#undobar'); if(!bar) return;
-  $('#undoMsg').textContent=msg; bar.hidden=false; clearTimeout(undoT); undoT=setTimeout(()=>{ bar.hidden=true; undoFn=null; }, 6000); }
-function hideUndo(){ const bar=$('#undobar'); if(bar) bar.hidden=true; undoFn=null; clearTimeout(undoT); }
-/* SP-3: lastfill 실행취소 — 이전 값으로 재기록(없었으면 항목 삭제) */
-function restoreEntry(id, prev, card){
-  const had = prev && (prev.w||prev.r||prev.rir||prev.note);
-  const setF=(f,v)=>{ const el=card&&card.querySelector(".log input[data-f='"+f+"']"); const val=(v==null?'':String(v)); if(el) el.value=val; };
-  if(had){ store[id]={ ...prev };
-    setF('w',prev.w); setF('r',prev.r); setF('rir',prev.rir); setF('note',prev.note);
-    const box=card&&card.querySelector('.e1rm'); if(box){ const e1=e1rm(prev.w,prev.r); box.querySelector('b').textContent=e1?e1+'kg':'—'; box.classList.toggle('hide', !e1); }
-    queueEntry(id);
-  } else {
-    if(card){ card.querySelectorAll('.log input').forEach(inp=>inp.value=''); const box=card.querySelector('.e1rm'); if(box){ box.querySelector('b').textContent='—'; box.classList.add('hide'); } }
-    clearEntry(id);
-  }
 }
 /* SP-3: 전체 기록 JSON 내보내기(백업) */
 async function exportData(){
@@ -733,12 +699,12 @@ function exCard(k,ex,i,num){
   const hasFold=foldItems.length>0;
   const foldBtn = hasFold?`<button class="exi" data-fold="${id}" aria-expanded="false" aria-controls="fold-${id}" aria-label="${esc(ex.n)} 설명 보기" title="설명·큐·가동범위 보기">ⓘ</button>`:'';
   const fold = hasFold?`<div class="exfold" id="fold-${id}" hidden>${foldItems.join('')}</div>`:'';
-  let lp=null, lpBlk=null, lpSame=false;
-  if(lastMap[id]){ if(lastMap[id][week]){ lp=lastMap[id][week]; lpBlk=week; lpSame=true; }
-    else { const ob=week==='S'?'H':'S'; if(lastMap[id][ob]){ lp=lastMap[id][ob]; lpBlk=ob; } } }
-  const lastRec = lp
-    ? `<div class="lastrec${lpSame?'':' alt'}">지난 ${lpBlk==='S'?'스트렝스':'하이퍼'}${lp.date?' · '+esc(lp.date.slice(5).replace('-','/')):''} · <b>${esc(lp.w||'?')}kg × ${esc(lp.r||'?')}회</b>${(lp.rir!==''&&lp.rir!=null)?' · RIR '+esc(lp.rir):''}${lpSame?'':' <span class="altn">(다른 블록)</span>'}<button class="lastfill" data-id="${id}">지난값 ⤵</button></div>`
-    : `<div class="lastrec none">이 종목 첫 기록 — 오늘이 기준점</div>`;
+  /* 지난 값(같은 블록 우선)을 입력칸 placeholder로 회색 예시 표시 — 별도 행/자동채움 버튼 없음 */
+  let lp=null;
+  if(lastMap[id]){ lp = lastMap[id][week] || lastMap[id][week==='S'?'H':'S'] || null; }
+  const phW = (lp && lp.w!=null && lp.w!=='') ? esc(lp.w) : 'kg';
+  const phR = (lp && lp.r!=null && lp.r!=='') ? esc(lp.r) : '회';
+  const phRir = (lp && lp.rir!=null && lp.rir!=='') ? esc(lp.rir) : '0~5';
   return `<div class="ex">
     <div class="ex-top">
       <span class="ex-num">${String(num||i+1).padStart(2,'0')}</span>
@@ -752,11 +718,10 @@ function exCard(k,ex,i,num){
       ${restBadge}
       <a class="yt" href="${vidHref(ex)}" target="_blank" rel="noopener">▶ 영상</a>
     </div>
-    ${lastRec}
     <div class="log">
-      <label>무게 <input data-id="${id}" data-f="w" inputmode="decimal" placeholder="kg" value="${esc(rec.w||'')}"></label>
-      <label>반복 <input data-id="${id}" data-f="r" inputmode="numeric" placeholder="회" value="${esc(rec.r||'')}"></label>
-      <label>RIR <input data-id="${id}" data-f="rir" inputmode="numeric" placeholder="0~5" value="${esc(rec.rir||'')}"></label>
+      <label>무게 <input data-id="${id}" data-f="w" inputmode="decimal" placeholder="${phW}" value="${esc(rec.w||'')}"></label>
+      <label>반복 <input data-id="${id}" data-f="r" inputmode="numeric" placeholder="${phR}" value="${esc(rec.r||'')}"></label>
+      <label>RIR <input data-id="${id}" data-f="rir" inputmode="numeric" placeholder="${phRir}" value="${esc(rec.rir||'')}"></label>
       <div class="e1rm${e1?'':' hide'}" data-e="${id}" aria-live="polite">e1RM <b>${e1?e1+'kg':'—'}</b><span class="best">${best?' · 최고 '+best:''}</span></div>
     </div>
     <div class="log" style="border-top:0;padding-top:0;margin-top:6px">
@@ -877,7 +842,7 @@ function renderEvidence(){return `
 
 /* 메인 탭은 실사용 4개만. 원칙·행동·근거는 '가이드' 버튼으로 분리(탭 넘침 해소). */
 const TABS=[['push','Push'],['pull','Pull'],['legs','Legs'],['history','기록']];
-let guideTab='principles';
+let guideTab='principles', prevBeforeGuide='push'; /* 가이드 토글: 닫을 때 돌아갈 직전 화면 */
 function renderGuide(){
   const subs=[['principles','원칙'],['behavior','행동·회복'],['evidence','근거']];
   const nav=subs.map(([k,l])=>`<button class="gtab${guideTab===k?' on':''}" data-gtab="${k}" type="button">${l}</button>`).join('');
@@ -886,13 +851,16 @@ function renderGuide(){
 }
 function build(){
   const tabsEl=$('#tabs'); tabsEl.setAttribute('role','tablist');
-  tabsEl.innerHTML = TABS.map(([k,l])=>`<button class="tab" data-go="${k}" role="tab" id="tab-${k}" aria-selected="false">${l}</button>`).join('');
-  tabsEl.addEventListener('click',e=>{ const b=e.target.closest('[data-go]'); if(b) go(b.dataset.go); });
+  // Str/Hyp 토글(맨 앞) + P/P/L·기록 탭을 한 줄에
+  tabsEl.innerHTML = `<button class="wktoggle" id="weekToggle" type="button" aria-label="스트렝스/하이퍼트로피 전환">스트렝스</button>`
+    + TABS.map(([k,l])=>`<button class="tab" data-go="${k}" role="tab" id="tab-${k}" aria-selected="false">${l}</button>`).join('');
+  tabsEl.addEventListener('click',e=>{
+    if(e.target.closest('#weekToggle')){ week=(week==='S'?'H':'S'); localStorage.setItem(lk('week'),week); render(); return; }
+    const b=e.target.closest('[data-go]'); if(b) go(b.dataset.go);
+  });
   const mainEl=$('#main'); if(mainEl){ mainEl.setAttribute('role','tabpanel'); mainEl.setAttribute('tabindex','-1'); } /* SP-5 */
-  $('#undoBtn').addEventListener('click',()=>{ const f=undoFn; hideUndo(); if(f) f(); }); /* SP-3 */
-  $('#weekSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-week]'); if(b){ week=b.dataset.week; localStorage.setItem(lk('week'),week); render(); }});
   $('#lvlSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-lvl]'); if(b){ level=b.dataset.lvl; localStorage.setItem(lk('level'),level); render(); }});
-  $('#guideBtn').addEventListener('click',()=>go('guide')); /* 가이드(원칙·행동·근거) */
+  $('#guideBtn').addEventListener('click',()=>{ if(active==='guide'){ go(prevBeforeGuide); } else { prevBeforeGuide=active; go('guide'); } }); /* 토글: 다시 누르면 직전 화면으로 닫힘 */
   // 날짜 네비
   $('#dPrev').addEventListener('click',()=>{ date=shiftDate(date,-1); setDateInput(); if(isDay()) loadDay(); else render(); });
   $('#dNext').addEventListener('click',()=>{ date=shiftDate(date, 1); setDateInput(); if(isDay()) loadDay(); else render(); });
@@ -923,17 +891,6 @@ function build(){
       if(box) box.hidden=open; fi.setAttribute('aria-expanded', String(!open)); return; }
     const rb=e.target.closest('.restbtn');
     if(rb){ const sec=parseInt(rb.dataset.rest,10)||90; tSet(sec); const fp=$('#fpanel'); if(fp) fp.classList.add('open'); tToggle(); return; }
-    const lf=e.target.closest('.lastfill');
-    if(lf){ const id=lf.dataset.id, lm=lastMap[id]; if(lm){ const lp=lm[week]||lm[week==='S'?'H':'S'];
-      if(lp){ const card=lf.closest('.ex');
-        const prev={ ...(store[id]||{}) };                          /* SP-3: 실행취소용 이전 스냅샷 */
-        store[id]=store[id]||{};
-        const setF=(f,v)=>{ const el=card&&card.querySelector(".log input[data-f='"+f+"']"); const val=(v==null?'':String(v)); if(el) el.value=val; store[id][f]=val; };
-        setF('w',lp.w); setF('r',lp.r); setF('rir',lp.rir);
-        const box=card&&card.querySelector('.e1rm'); if(box){ const e1=e1rm(store[id].w,store[id].r); box.querySelector('b').textContent=e1?e1+'kg':'—'; box.classList.toggle('hide', !e1); }
-        queueEntry(id);
-        showUndo('지난값 입력됨', ()=>restoreEntry(id, prev, card));  /* SP-3: 잘못 누르면 6초 내 되돌리기 */
-      } } return; }
     const ec=e.target.closest('.entryclear');
     if(ec){ const id=ec.dataset.id; if(!confirm('이 종목의 오늘 기록을 지울까요?')) return;
       const card=ec.closest('.ex');
@@ -953,11 +910,10 @@ function setDateInput(){ const i=$('#dInput'); if(i) i.value=date; const today=k
 function go(k){ active=k; if(isDay()){ dayType=k; setAccent(k); loadDay(); } else { setAccent('push'); render(); } window.scrollTo({top:0,behavior:'smooth'}); const m=$('#main'); if(m){ m.setAttribute('aria-labelledby', document.getElementById('tab-'+k)?'tab-'+k:'guideBtn'); m.focus({preventScroll:true}); } } /* SP-5: 탭패널 포커스 이동 */
 function render(){
   document.querySelectorAll('.tab').forEach(t=>{ const on=t.dataset.go===active; t.classList.toggle('on',on); t.setAttribute('aria-selected', String(on)); }); /* SP-5 */
-  document.querySelectorAll('#weekSeg button').forEach(b=>b.classList.toggle('on',b.dataset.week===week));
+  const wt=$('#weekToggle'); if(wt){ wt.textContent = week==='S'?'스트렝스':'하이퍼'; wt.title = '현재 '+(week==='S'?'스트렝스':'하이퍼트로피')+' 주 (탭하여 전환)'; }
   document.querySelectorAll('#lvlSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lvl===level));
   const gb=$('#guideBtn'); if(gb) gb.classList.toggle('on', active==='guide');
   $('#datebar').style.display = isDay() ? 'flex' : 'none';
-  const wb=document.querySelector('.weekbar'); if(wb) wb.style.display = isDay() ? 'block' : 'none'; /* Str/Hyp는 운동일에만 */
   if(active==='history'){ renderHistory(); return; }
   const body = active==='guide' ? renderGuide() : renderDay(active);
   $('#main').innerHTML = `<section class="view">${body}</section>`;
