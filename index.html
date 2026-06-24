@@ -68,6 +68,12 @@
   .seg .lbl{font-size:10.5px;color:var(--faint);font-weight:700;letter-spacing:.06em;padding:0 10px;text-transform:uppercase}
   .seg button{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:12.5px;padding:8px 13px;cursor:pointer}
   .seg button.on{background:var(--accent);color:#15171c}
+  /* Str/Hyp 토글: 자주 바꾸므로 탭 바로 위에 크게 */
+  .weekbar{margin:14px 0 0}
+  .seg.big{width:100%}
+  .seg.big button{flex:1;padding:11px 13px;font-size:13.5px}
+  .guidebtn{margin-left:auto;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:8px 13px;font-family:var(--sans);font-weight:700;font-size:12.5px;cursor:pointer}
+  .guidebtn.on{border-color:var(--accent);color:var(--accent)}
 
   /* date bar */
   .datebar{display:flex;align-items:center;gap:8px;margin:14px 0 2px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px}
@@ -77,9 +83,13 @@
   .datebar .dw{font-size:10.5px;color:var(--faint);font-weight:700}
   .datebar .today{flex:none;font-size:11px;font-weight:700;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0 12px;height:42px;cursor:pointer}
 
-  .tabs{display:flex;gap:3px;margin:16px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-  .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:13.5px;padding:10px 11px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs{display:flex;gap:3px;margin:12px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:14px;padding:11px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
   .tab:hover{color:var(--text)} .tab.on{color:var(--text);border-bottom-color:var(--accent)}
+  /* 가이드 하위탭(원칙·행동·근거) */
+  .gtabs{display:flex;gap:4px;margin:0 0 14px;flex-wrap:wrap}
+  .gtab{background:var(--panel);border:1px solid var(--line);color:var(--muted);font-family:var(--sans);font-weight:700;font-size:13px;padding:8px 14px;border-radius:9px;cursor:pointer}
+  .gtab.on{border-color:var(--accent);color:var(--accent);background:var(--panel2)}
 
   .view{animation:fade .2s ease}
   @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
@@ -107,16 +117,17 @@
   .spanel .dl button.on{border-color:var(--flag);color:var(--flag);background:rgba(232,194,90,.1)}
 
   .ex{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-bottom:10px;border-left:3px solid var(--accent)}
-  .ex-top{display:flex;gap:12px;align-items:flex-start}
-  .ex-num{font-family:var(--mono);font-size:12px;color:var(--faint);padding-top:2px;width:20px;flex:none}
-  .ex-main{flex:1;min-width:0}
-  .ex-name{font-weight:700;font-size:15.5px;word-break:keep-all}
+  .ex-top{display:flex;gap:10px;align-items:center}
+  .ex-num{font-family:var(--mono);font-size:12px;color:var(--faint);width:20px;flex:none}
   .ex-cue{color:var(--muted);font-size:12.5px;margin-top:3px;word-break:keep-all}
-  .ex-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
-  .ex-rx{font-family:var(--mono);font-weight:700;font-size:17px;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;white-space:nowrap}
+  /* 처방(rx)은 항상 자기 줄에 히어로로 + 템포·휴식·영상은 그 아래 한 줄 칩(화면폭 무관 일관) */
+  .ex-rxline{margin-top:11px}
+  .ex-rx{display:inline-block;font-family:var(--mono);font-weight:700;font-size:17px;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+  .ex-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .ex-meta .restbtn{margin-left:0}
   /* SP-4: 종목명 옆 상태 점(뱃지 대체) + 설명 펼치기 토글 + 접이 영역 */
-  .ex-name{display:flex;align-items:center;gap:2px}
-  .exn-t{font-weight:700;font-size:15.5px;word-break:keep-all;flex:1;min-width:0}
+  .ex-name{display:flex;align-items:center;gap:2px;flex:1;min-width:0}
+  .exn-t{font-weight:700;font-size:15.5px;word-break:keep-all}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:5px;flex:none}
   .dot.flag{background:var(--flag)} .dot.rom{background:var(--rom)}
   .exi{background:none;border:1px solid var(--line);color:var(--muted);border-radius:50%;width:30px;height:30px;min-width:30px;font-size:13px;line-height:1;cursor:pointer;flex:none;margin-left:6px;padding:0}
@@ -132,7 +143,6 @@
   .ss-h span{flex:1 1 100%;order:3;font-weight:600;font-size:11px;color:var(--muted)}
   .restbtn{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--rom);border-radius:7px;padding:8px 12px;min-height:38px;font-family:var(--mono);font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
   .restbtn:hover{border-color:var(--rom)} .restbtn:active{transform:scale(.96)}
-  .ex-side .restbtn{margin-left:0}
 
   .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:20px;vertical-align:middle;margin-left:6px;background:rgba(232,194,90,.13);color:var(--flag);border:1px solid rgba(232,194,90,.3);word-break:keep-all;white-space:nowrap}
   .flagnote{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12.5px;background:rgba(232,194,90,.07);border-left:2px solid var(--flag);color:#D8C896}
@@ -226,9 +236,6 @@
 
   @media(max-width:520px){
     header .lede{font-size:20px}
-    .ex-top{flex-wrap:wrap}
-    .ex-main{flex:1 1 calc(100% - 32px);min-width:0}
-    .ex-side{order:3;flex:0 0 100%;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;margin-top:6px;flex-wrap:wrap}
     .cond{margin-left:0;width:100%}
     .log input.note{width:100%}
   }
@@ -251,10 +258,9 @@
   </header>
 
   <div class="bar">
-    <div class="seg" id="weekSeg"><span class="lbl">이번 주</span>
-      <button data-week="S">스트렝스</button><button data-week="H">하이퍼트로피</button></div>
     <div class="seg" id="lvlSeg"><span class="lbl">숙련도</span>
       <button data-lvl="adv">숙련</button><button data-lvl="onb">온보딩</button></div>
+    <button class="guidebtn" id="guideBtn" type="button" aria-label="가이드(원칙·행동·근거)">📖 가이드</button>
   </div>
 
   <div class="datebar" id="datebar">
@@ -262,6 +268,12 @@
     <div class="di"><input type="date" id="dInput" aria-label="운동 날짜"><span class="dw" id="dWeekday"></span></div>
     <button id="dNext" aria-label="다음 날">›</button>
     <button class="today" id="dToday">오늘</button>
+  </div>
+
+  <!-- Str/Hyp: 매 사이클 전환 → P/P/L 탭 바로 앞에 배치 -->
+  <div class="weekbar">
+    <div class="seg big" id="weekSeg"><span class="lbl">이번 주</span>
+      <button data-week="S">스트렝스</button><button data-week="H">하이퍼트로피</button></div>
   </div>
 
   <nav class="tabs" id="tabs"></nav>
@@ -727,13 +739,18 @@ function exCard(k,ex,i,num){
   const lastRec = lp
     ? `<div class="lastrec${lpSame?'':' alt'}">지난 ${lpBlk==='S'?'스트렝스':'하이퍼'}${lp.date?' · '+esc(lp.date.slice(5).replace('-','/')):''} · <b>${esc(lp.w||'?')}kg × ${esc(lp.r||'?')}회</b>${(lp.rir!==''&&lp.rir!=null)?' · RIR '+esc(lp.rir):''}${lpSame?'':' <span class="altn">(다른 블록)</span>'}<button class="lastfill" data-id="${id}">지난값 ⤵</button></div>`
     : `<div class="lastrec none">이 종목 첫 기록 — 오늘이 기준점</div>`;
-  return `<div class="ex"><div class="ex-top">
-    <span class="ex-num">${String(num||i+1).padStart(2,'0')}</span>
-    <div class="ex-main"><div class="ex-name"><span class="exn-t">${ex.n}</span>${dots}${foldBtn}</div>${fold}</div>
-    <div class="ex-side"><div class="ex-rx">${rx(ex)}</div>
+  return `<div class="ex">
+    <div class="ex-top">
+      <span class="ex-num">${String(num||i+1).padStart(2,'0')}</span>
+      <div class="ex-name"><span class="exn-t">${ex.n}</span>${dots}</div>
+      ${foldBtn}
+    </div>
+    ${fold}
+    <div class="ex-rxline"><div class="ex-rx">${rx(ex)}</div></div>
+    <div class="ex-meta">
       ${ex.tempo?`<div class="tempo">⏱ ${/[0-9]/.test(ex.tempo)?'템포 '+ex.tempo:ex.tempo}</div>`:''}
       ${restBadge}
-      <a class="yt" href="${vidHref(ex)}" target="_blank" rel="noopener">▶ 영상</a></div>
+      <a class="yt" href="${vidHref(ex)}" target="_blank" rel="noopener">▶ 영상</a>
     </div>
     ${lastRec}
     <div class="log">
@@ -858,7 +875,15 @@ function renderEvidence(){return `
   <div class="p" style="border-left:3px solid var(--rom)"><h3 style="color:var(--rom)">길항근 훈련 → 유연성</h3><p><span class="k">상호억제(신경·즉각):</span> 길항근 수축 → 타이트한 주동근 반사적 이완(능동/PNF 스트레칭 원리). <span class="k">근력 훈련(구조·지속):</span> 풀 ROM 근력 훈련은 스트레칭과 비슷하게 ROM을 늘리고 근력까지 추가. 늘어난 길이의 편심성은 근섬유 길이(직렬 근절)를 늘려 능동 가동범위 확장(NHE 9주: 근섬유 +19~33%) — 단 늘어난 길이일 때만, 가역적.</p>
     <p class="src">참고: Wolf et al.(2023, ROM 메타); 늘어난 구간 부분반복(Wolf 2024/25, Pedrosa 2022); 근력 vs 스트레칭 ROM(Afonso 2021 메타·RCT 2024); 편심성 근섬유 길이(Franchi·NHE 연구). e1RM은 고반복에서 부정확해 12회로 캡한 추정치. 일반 가이드이며 개인 상태에 맞춰 조정.</p></div>`;}
 
-const TABS=[['push','Push'],['pull','Pull'],['legs','Legs'],['history','기록'],['principles','원칙'],['behavior','행동·회복'],['evidence','근거']];
+/* 메인 탭은 실사용 4개만. 원칙·행동·근거는 '가이드' 버튼으로 분리(탭 넘침 해소). */
+const TABS=[['push','Push'],['pull','Pull'],['legs','Legs'],['history','기록']];
+let guideTab='principles';
+function renderGuide(){
+  const subs=[['principles','원칙'],['behavior','행동·회복'],['evidence','근거']];
+  const nav=subs.map(([k,l])=>`<button class="gtab${guideTab===k?' on':''}" data-gtab="${k}" type="button">${l}</button>`).join('');
+  const body = guideTab==='behavior'?renderBehavior() : guideTab==='evidence'?renderEvidence() : renderPrinciples();
+  return `<div class="gtabs">${nav}</div>${body}`;
+}
 function build(){
   const tabsEl=$('#tabs'); tabsEl.setAttribute('role','tablist');
   tabsEl.innerHTML = TABS.map(([k,l])=>`<button class="tab" data-go="${k}" role="tab" id="tab-${k}" aria-selected="false">${l}</button>`).join('');
@@ -867,6 +892,7 @@ function build(){
   $('#undoBtn').addEventListener('click',()=>{ const f=undoFn; hideUndo(); if(f) f(); }); /* SP-3 */
   $('#weekSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-week]'); if(b){ week=b.dataset.week; localStorage.setItem(lk('week'),week); render(); }});
   $('#lvlSeg').addEventListener('click',e=>{ const b=e.target.closest('[data-lvl]'); if(b){ level=b.dataset.lvl; localStorage.setItem(lk('level'),level); render(); }});
+  $('#guideBtn').addEventListener('click',()=>go('guide')); /* 가이드(원칙·행동·근거) */
   // 날짜 네비
   $('#dPrev').addEventListener('click',()=>{ date=shiftDate(date,-1); setDateInput(); if(isDay()) loadDay(); else render(); });
   $('#dNext').addEventListener('click',()=>{ date=shiftDate(date, 1); setDateInput(); if(isDay()) loadDay(); else render(); });
@@ -890,6 +916,8 @@ function build(){
   });
   main.addEventListener('blur',e=>{ if(e.target.matches('.log input')) flushEntryNow(e.target.dataset.id); }, true);
   main.addEventListener('click',e=>{
+    const gt=e.target.closest('.gtab');                             /* 가이드 하위탭 */
+    if(gt){ guideTab=gt.dataset.gtab; render(); return; }
     const fi=e.target.closest('.exi');                              /* SP-4: 설명 접이 토글 */
     if(fi){ const id=fi.dataset.fold, box=document.getElementById('fold-'+id), open=fi.getAttribute('aria-expanded')==='true';
       if(box) box.hidden=open; fi.setAttribute('aria-expanded', String(!open)); return; }
@@ -922,14 +950,16 @@ function isDay(){ return active==='push'||active==='pull'||active==='legs'; }
 function setDateInput(){ const i=$('#dInput'); if(i) i.value=date; const today=kstToday(), past=date<today, future=date>today;
   const w=$('#dWeekday'); if(w) w.innerHTML=weekdayKr(date)+'요일'+(date===today?' · <span style="color:var(--accent);font-weight:800">오늘</span>':past?' · <span class="dw-warn">⚠ 지난 날짜</span>':future?' · <span class="dw-warn">⚠ 미래 날짜</span>':'');
   const db=$('#datebar'); if(db) db.classList.toggle('pastdate', past||future); }
-function go(k){ active=k; if(isDay()){ dayType=k; setAccent(k); loadDay(); } else { setAccent('push'); render(); } window.scrollTo({top:0,behavior:'smooth'}); const m=$('#main'); if(m){ m.setAttribute('aria-labelledby','tab-'+k); m.focus({preventScroll:true}); } } /* SP-5: 탭패널 포커스 이동 */
+function go(k){ active=k; if(isDay()){ dayType=k; setAccent(k); loadDay(); } else { setAccent('push'); render(); } window.scrollTo({top:0,behavior:'smooth'}); const m=$('#main'); if(m){ m.setAttribute('aria-labelledby', document.getElementById('tab-'+k)?'tab-'+k:'guideBtn'); m.focus({preventScroll:true}); } } /* SP-5: 탭패널 포커스 이동 */
 function render(){
   document.querySelectorAll('.tab').forEach(t=>{ const on=t.dataset.go===active; t.classList.toggle('on',on); t.setAttribute('aria-selected', String(on)); }); /* SP-5 */
   document.querySelectorAll('#weekSeg button').forEach(b=>b.classList.toggle('on',b.dataset.week===week));
   document.querySelectorAll('#lvlSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lvl===level));
+  const gb=$('#guideBtn'); if(gb) gb.classList.toggle('on', active==='guide');
   $('#datebar').style.display = isDay() ? 'flex' : 'none';
+  const wb=document.querySelector('.weekbar'); if(wb) wb.style.display = isDay() ? 'block' : 'none'; /* Str/Hyp는 운동일에만 */
   if(active==='history'){ renderHistory(); return; }
-  const body = active==='principles'?renderPrinciples() : active==='behavior'?renderBehavior() : active==='evidence'?renderEvidence() : renderDay(active);
+  const body = active==='guide' ? renderGuide() : renderDay(active);
   $('#main').innerHTML = `<section class="view">${body}</section>`;
 }
 
