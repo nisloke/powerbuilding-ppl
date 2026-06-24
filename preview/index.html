@@ -76,9 +76,9 @@
   .datebar{display:flex;align-items:center;gap:8px;margin:14px 0 2px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 9px}
   .datebar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;width:42px;height:42px;font-size:17px;font-weight:800;cursor:pointer;line-height:1;flex:none}
   .datebar .di{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:1px}
-  .datebar input[type=date]{background:none;border:0;color:var(--text);font-family:var(--mono);font-size:14px;font-weight:700;text-align:center;width:100%;color-scheme:dark}
+  .datebar input[type=date]{background:none;border:0;color:var(--text);font-family:var(--mono);font-size:14px;font-weight:700;text-align:center;width:auto;max-width:100%;color-scheme:dark} /* width:auto → 모바일에서 날짜가 가운데로(100%면 좌측 정렬됨) */
   .datebar .dw{font-size:10.5px;color:var(--faint);font-weight:700}
-  .datebar .today{flex:none;font-size:11px;font-weight:700;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0 12px;height:42px;cursor:pointer}
+  .datebar .today{flex:none;width:auto;font-size:11px;font-weight:700;color:var(--accent);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:0 12px;height:42px;cursor:pointer} /* width:auto로 '.datebar button'의 42px 고정폭 상속 해제(안 그러면 '오늘'이 세로로 줄바꿈) */
 
   .tabs{display:flex;gap:6px;margin:14px 0;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .tab{background:none;border:0;color:var(--muted);font-family:var(--sans);font-weight:700;font-size:14px;padding:11px 6px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
@@ -513,20 +513,18 @@ function sref(d, dt){ return doc(db, 'users', USER.uid, 'sessions', d+'_'+dt); }
 /* ---------- 날짜별 로드 ---------- */
 async function loadDay(){
   flushAll(); /* SP-1: 날짜/분할 전환 전, 펜딩 쓰기를 '캡처된' 세션으로 먼저 저장(스테일 라이트 방지) */
-  store={}; sessionMeta={}; bestMap={}; lastMap={};
-  render();
-  if(!db || !USER) return;
   const dd=date, dt=dayType;
+  if(!db || !USER){ store={}; sessionMeta={}; bestMap={}; lastMap={}; render(); return; }
   try{
     const [snap] = await Promise.all([ getDoc(sref(dd, dt)), loadBest() ]);
-    if(dd!==date || dt!==dayType) return;
+    if(dd!==date || dt!==dayType) return;             /* 빠른 전환 시 이전 fetch는 버림 */
     if(snap.exists()){
       const d=snap.data();
       store = normalizeEntries(d.entries, dt);
       sessionMeta = { condition:(d.condition??null), memo:(d.memo||''), bodyweight_kg:(d.bodyweight_kg??''), sleep_hours:(d.sleep_hours??''), is_deload:!!d.is_deload };
     } else { store={}; sessionMeta={}; }
-    render();
-  }catch(e){ /* 오프라인/오류 → 현재 화면 유지(Firestore 캐시) */ }
+    render(); /* 데이터 로드 후 1회만 렌더 → '빈 화면→채움' 깜빡임(이중 fade) 제거 */
+  }catch(e){ store={}; sessionMeta={}; bestMap={}; lastMap={}; render(); }
 }
 async function loadBest(){
   bestMap={}; lastMap={};
@@ -633,11 +631,12 @@ function metaLine(){
 function setAccent(k){ document.documentElement.style.setProperty('--accent', (DAYS[k]?'var('+DAYS[k].color+')':'var(--push)')); }
 
 /* ---------- 운동 구성: 메인(직렬·긴 휴식) + 슈퍼세트(비경쟁·비간섭만) + 단독 ----------
-   슈퍼세트 안전 규칙: 같은 근육·코어는 묶지 않음(눈앞 캄캄 사고 방지). 수정 후 validateProgram가 런타임 검증. */
+   안전 규칙: ① 같은 근육 금지(validateProgram 검증) ② 전신·호흡 고부하 컴파운드 2개 동시 금지(눈앞 캄캄 사고 방지 — PLAN 배치로 관리).
+   push/pull 마지막 보조+코어는 저부하·비간섭이라 슈퍼세트로 묶어 휴식 시간 절약. */
 const PLAN = {
-  push: { main:[0,1], ss:[['A',[2,3]]], solo:[4,5] },   // ssA=인클라인(가슴상부)+레터럴(측면) · 삼두(4)·코어(5) 단독
-  pull: { main:[0,1], ss:[['A',[2,3]]], solo:[4,5] },   // ssA=시티드로우(등)+페이스풀(후면삼각) · 이두(4)·코어(5) 단독
-  legs: { main:[0,1], ss:[['A',[5,4]]], solo:[2,3], order:[0,1,2,3,5,4] }, // 사고페어 해체: 불가리안(2)·스윙(3) 단독 / ssA=노르딕(햄)+카프(종아리) 비경쟁
+  push: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },   // ssA=인클라인(가슴상부)+레터럴(측면) / ssB=삼두+코어(행잉) 비간섭
+  pull: { main:[0,1], ss:[['A',[2,3]],['B',[4,5]]], solo:[] },   // ssA=시티드로우(등)+페이스풀(후면삼각) / ssB=이두+코어(팔로프) 비간섭
+  legs: { main:[0,1], ss:[['A',[5,4]]], solo:[2,3], order:[0,1,2,3,5,4] }, // ssA=노르딕(햄)+카프(종아리) 비경쟁 / 불가리안(2)·스윙(3)은 고부하라 단독 유지(사고페어)
 };
 function exTier(k,i){ const p=PLAN[k]; if(!p) return 'main';
   if(p.main.includes(i)) return 'main';
@@ -655,14 +654,16 @@ function normalizeEntries(ents,k){
   for(const key in ents){ if(ids.has(key)) out[key]=ents[key]; } // 직접 id 키(최신 쓰기) 우선
   return out;
 }
-/* 프로그램 무결성 검증(렌더 시): order 누락/중복 + 슈퍼세트 같은근육/코어 금지 → 가시 에러 */
+/* 프로그램 무결성 검증(렌더 시): order 누락/중복 + 슈퍼세트 같은근육 금지 → 가시 에러.
+   (코어는 슈퍼세트 허용 — push/pull의 코어는 세션 끝 마무리라 길항·비간섭 페어로 묶어 시간 절약.
+    단, 레그의 고부하 컴파운드(스쿼트/RDL/BSS/스윙)는 설계상 단독 유지: 같은근육이 아니어도 전신·호흡 부하가
+    겹치면 '눈앞 캄캄' 위험 → 코드 규칙이 아니라 PLAN 배치로 관리.) */
 function validateProgram(k){
   const p=PLAN[k], ex=DAYS[k]&&DAYS[k].ex, issues=[]; if(!p||!ex) return issues;
   const order=p.order||ex.map((_,n)=>n); const seen=new Array(ex.length).fill(0);
   order.forEach(i=>{ if(i>=0&&i<ex.length) seen[i]++; else issues.push('order 잘못된 인덱스 '+i); });
   seen.forEach((c,i)=>{ if(c!==1) issues.push('종목 '+i+' "'+(ex[i]?ex[i].n:'?')+'" order '+c+'회(1회여야)'); });
   (p.ss||[]).forEach(([lab,arr])=>{
-    arr.forEach(i=>{ if(ex[i]&&ex[i].slot==='코어') issues.push('슈퍼세트 '+lab+'에 코어 "'+ex[i].n+'" 포함(금지)'); });
     for(let a=0;a<arr.length;a++) for(let b=a+1;b<arr.length;b++){ const ma=ex[arr[a]]&&ex[arr[a]].muscle, mb=ex[arr[b]]&&ex[arr[b]].muscle;
       if(ma&&ma===mb) issues.push('슈퍼세트 '+lab+': "'+ex[arr[a]].n+'" + "'+ex[arr[b]].n+'" 같은 근육('+ma+')'); }
   });
@@ -921,7 +922,7 @@ function render(){
   document.querySelectorAll('#weekToggle button').forEach(b=>{ const on=b.dataset.week===week; b.classList.toggle('on',on); b.setAttribute('aria-pressed', String(on)); }); /* 알약 토글 활성측만 색상 */
   document.querySelectorAll('#lvlSeg button').forEach(b=>b.classList.toggle('on',b.dataset.lvl===level));
   const gb=$('#guideBtn'); if(gb) gb.classList.toggle('on', active==='guide');
-  $('#datebar').style.display = isDay() ? 'flex' : 'none';
+  $('#datebar').style.display = 'flex'; /* 모든 탭에서 날짜창 유지(기록/가이드에서도 위치 일관) */
   if(active==='history'){ renderHistory(); return; }
   const body = active==='guide' ? renderGuide() : renderDay(active);
   $('#main').innerHTML = `<section class="view">${body}</section>`;
