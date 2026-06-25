@@ -22,7 +22,7 @@
 users/{uid}/sessions/{YYYY-MM-DD_dayType}
   { date, dayType, week_block, level_mode, condition, memo,
     bodyweight_kg, sleep_hours, is_deload, updatedAt,
-    entries: { "bench_flat": {w,r,rir,note,name}, ... } }   // 키 = 종목 id(stable exerciseId)
+    entries: { "bench_flat": {w,r,rir,up,note,name}, ... } }   // 키 = 종목 id(stable exerciseId), up=증량 신호(▲)
 ```
 
 - **세션 = 날짜+운동 1문서**, 종목 기록은 그 문서의 `entries` 맵에 임베드(하루치 1읽기/1쓰기).
@@ -42,7 +42,10 @@ users/{uid}/sessions/{YYYY-MM-DD_dayType}
 
 - **오프라인 우선**: Firestore 영구 캐시(IndexedDB)로 오프라인 읽기/쓰기 → 재접속 시 자동 동기화. 헬스장 신호가 약해도 입력 가능.
 - **세션 유지**: Firebase Auth가 토큰을 자동 갱신·영속화 → 한 번 로그인하면 계속 유지.
-- **벽시계 기반 휴식 타이머** + 알림음/진동.
+- **휴식 타이머**: 화면 하단 **고정 컴팩트 바**(항상 표시) — 타이머 줄 + −30/−15/시작/+15. 종목의 휴식 칩을 누르면 즉시 세팅·시작. 벽시계 기반 · 알림음/진동 · safe-area 대응.
+- **e1RM 상시 표시**: 무게·횟수를 넣으면 같은 자리에서 값만 갱신(없으면 `—`) — 나타났다 사라지며 아래를 미는 레이아웃 흔들림 없음.
+- **▲ 증량 플래그**: 전 세트를 완수하면 처방 줄의 ▲를 눌러 "다음에 증량"을 표시(어두운 그레이→빨강). 엔트리 `up` 필드로 저장.
+- **지난 값 placeholder**: 무게·횟수·메모 입력칸에 직전 세션 값을 회색 힌트로 표시(같은 블록 우선). RIR은 입력칸 없이 **강도 기준**(처방·가이드)으로만 사용.
 
 ## 배포 갱신
 
