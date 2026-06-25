@@ -28,7 +28,7 @@
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
-    -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 0 56px}
+    -webkit-font-smoothing:antialiased;line-height:1.5;padding:0 0 calc(96px + env(safe-area-inset-bottom))}
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
   .wrap{max-width:780px;margin:0 auto;padding:18px 16px 0}
   [hidden]{display:none !important}
@@ -204,7 +204,7 @@
   .hmemo{font-size:12.5px;color:var(--muted);margin-top:6px;word-break:keep-all;white-space:pre-wrap}
   .hempty{color:var(--faint);font-size:13px;text-align:center;padding:30px 0}
 
-  .save{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 16px;border-radius:30px;font-size:12.5px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:60}
+  .save{position:fixed;bottom:calc(100px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 16px;border-radius:30px;font-size:12.5px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:60}
   .save.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .save.err{border-color:var(--bad);color:var(--bad)} .save.off{border-color:var(--flag);color:var(--flag)}
   /* SP-3: 지난/미래 날짜 경고 */
@@ -215,23 +215,19 @@
   /* SP-5: 탭패널 포커스 시 외곽선 박스 억제(프로그램적 포커스용) */
   #main:focus{outline:none}
 
-  .fab{position:fixed;right:16px;bottom:18px;width:56px;height:56px;border-radius:50%;background:var(--rom);color:#10231C;border:none;font-size:22px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.4);z-index:50;display:flex;align-items:center;justify-content:center}
-  .fab:active{transform:scale(.94)}
-  .fpanel{position:fixed;right:16px;bottom:84px;width:280px;max-width:calc(100vw - 32px);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.5);transform:translateY(12px) scale(.98);opacity:0;pointer-events:none;transition:.18s}
-  .fpanel.open{transform:none;opacity:1;pointer-events:auto}
-  .fp-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:8px}
-  .fp-time{font-family:var(--mono);font-size:42px;font-weight:700;text-align:center;letter-spacing:.02em;margin:2px 0 8px}
-  .fp-time.done{color:var(--rom)}
-  .fp-row{display:flex;gap:6px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
-  .fp-row button{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer;min-width:40px}
-  .fp-row button.go{background:var(--rom);color:#10231C;border-color:var(--rom)}
-  .fp-row button.pre{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
-  .fp-div{height:1px;background:var(--line);margin:12px 0}
-  .fp-set{display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .fp-set .lab{font-size:12.5px;color:var(--muted);font-weight:700}
-  .fp-set .ctr{display:flex;align-items:center;gap:12px}
-  .fp-set .ctr button{width:38px;height:38px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);font-size:20px;font-weight:800;cursor:pointer;line-height:1}
-  .fp-set .ctr .n{font-family:var(--mono);font-size:24px;font-weight:700;min-width:28px;text-align:center}
+  /* 항상 하단 고정 휴식 타이머 (컴팩트: 타이머 1줄 + 조작 4버튼 1줄) */
+  .rbar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--panel);border-top:1px solid var(--line);padding:6px 12px calc(6px + env(safe-area-inset-bottom))}
+  .rbar-in{max-width:780px;margin:0 auto}
+  .rbar .rt{font-family:var(--mono);font-size:24px;font-weight:700;text-align:center;line-height:1.15;letter-spacing:.02em}
+  .rbar .rt.done{color:var(--rom)}
+  .rbar .rrow{display:flex;gap:6px;margin-top:4px}
+  .rbar .rrow button{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 0;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;min-height:38px}
+  .rbar .rrow button.go{background:var(--rom);color:#10231C;border-color:var(--rom)}
+  .rbar .rrow button:active{transform:scale(.96)}
+  /* 증량 가능 플래그(RIR 우측 ▲): 평소 어두운 그레이, 켜면 빨강 */
+  .upflag{background:none;border:1px solid var(--line);color:#565c67;border-radius:7px;width:34px;height:34px;font-size:12px;line-height:1;cursor:pointer;flex:none;padding:0}
+  .upflag.on{color:var(--bad);border-color:var(--bad);background:rgba(224,122,122,.13)}
+  .upflag:active{transform:scale(.94)}
 
   @media(max-width:520px){
     header .lede{font-size:20px}
@@ -276,29 +272,15 @@
 
 <div class="save" id="save">저장됨</div>
 
-<button class="fab" id="fab" aria-label="휴식 타이머" hidden>⏱</button>
-<div class="fpanel" id="fpanel" hidden>
-  <div class="fp-h">휴식 타이머</div>
-  <div class="fp-time" id="fpTime">1:30</div>
-  <div class="fp-row">
-    <button class="pre" data-set="60">60s</button>
-    <button class="pre" data-set="90">90s</button>
-    <button class="pre" data-set="120">120s</button>
-    <button class="pre" data-set="180">180s</button>
-  </div>
-  <div class="fp-row">
-    <button data-adj="-15">−15</button>
-    <button class="go" id="fpToggle">시작</button>
-    <button data-adj="15">+15</button>
-    <button id="fpReset">리셋</button>
-  </div>
-  <div class="fp-div"></div>
-  <div class="fp-set">
-    <span class="lab">세트 카운트</span>
-    <div class="ctr">
-      <button id="setMinus">−</button>
-      <span class="n" id="setN">0</span>
-      <button id="setPlus">+</button>
+<!-- 항상 하단 고정 휴식 타이머 (타이머 1줄 + 조작 4버튼 1줄) -->
+<div class="rbar" id="rbar" hidden>
+  <div class="rbar-in">
+    <div class="rt" id="rTime">1:30</div>
+    <div class="rrow">
+      <button data-adj="-30">−30</button>
+      <button data-adj="-15">−15</button>
+      <button class="go" id="rToggle">시작</button>
+      <button data-adj="15">+15</button>
     </div>
   </div>
 </div>
@@ -422,7 +404,7 @@ function boot(){
 
 /* ---------- 설정 화면 ---------- */
 function renderConfig(){
-  $('#app').hidden=true; $('#gate').hidden=false;
+  $('#app').hidden=true; $('#gate').hidden=false; const _rb=$('#rbar'); if(_rb) _rb.hidden=true;
   $('#gcard').innerHTML=`
     <h1>최초 설정</h1>
     <p class="big">PPL <em>일지</em> 연결</p>
@@ -448,7 +430,7 @@ function renderFatal(msg){
 
 /* ---------- 로그인 화면 ---------- */
 function renderAuth(errMsg){
-  $('#app').hidden=true; $('#gate').hidden=false; $('#fab').hidden=true; $('#fpanel').hidden=true;
+  $('#app').hidden=true; $('#gate').hidden=false; const _rb=$('#rbar'); if(_rb) _rb.hidden=true;
   $('#gcard').innerHTML=`
     <h1>로그인</h1>
     <p class="big">PPL <em>일지</em></p>
@@ -474,7 +456,7 @@ function authErr(m){
 
 /* ---------- 앱 표시 ---------- */
 function showApp(){
-  $('#gate').hidden=true; $('#app').hidden=false; $('#fab').hidden=false; $('#fpanel').hidden=false;
+  $('#gate').hidden=true; $('#app').hidden=false; $('#rbar').hidden=false;
   $('#meEmail').textContent=USER.email||'(로그인됨)';
   week = localStorage.getItem(lk('week')) || 'S';
   level = localStorage.getItem(lk('level')) || 'adv';
@@ -545,8 +527,8 @@ async function loadBest(){
     const prior=docs.filter(d=>d.date && d.date < date).sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
     const lm={};
     for(const d of prior){ const blk=(d.week_block==='H')?'H':'S'; const ents=normalizeEntries(d.entries, dayType);
-      for(const k in ents){ const e=ents[k]; if(!e||!(e.w||e.r)) continue;
-        if(!lm[k]) lm[k]={}; if(!lm[k][blk]) lm[k][blk]={ w:e.w, r:e.r, rir:e.rir, date:d.date }; } }
+      for(const k in ents){ const e=ents[k]; if(!e||!(e.w||e.r||e.rir||e.note)) continue;
+        if(!lm[k]) lm[k]={}; if(!lm[k][blk]) lm[k][blk]={ w:e.w, r:e.r, rir:e.rir, note:e.note, date:d.date }; } }
     lastMap=lm;
   }catch(e){}
 }
@@ -568,7 +550,7 @@ async function flushEntry(key){
   if(!db || !USER) return;
   const e=entryTimers[key]; const d=e?e.d:date, dt=e?e.dt:dayType; delete entryTimers[key];
   const o=store[key]||{};
-  const entry={ w:(o.w||''), r:(o.r||''), rir:(o.rir||''), note:(o.note||'').slice(0,500), name:(o.name||'').slice(0,120) };
+  const entry={ w:(o.w||''), r:(o.r||''), rir:(o.rir||''), up:(o.up?1:0), note:(o.note||'').slice(0,500), name:(o.name||'').slice(0,120) };
   const payload={ date:d, dayType:dt, week_block:week, level_mode:level, updatedAt:Date.now(), entries:{ [key]: entry } };
   try{
     const p=setDoc(sref(d, dt), payload, {merge:true});
@@ -719,6 +701,7 @@ function exCard(k,ex,i,num){
   const phW = (lp && lp.w!=null && lp.w!=='') ? esc(lp.w) : 'kg';
   const phR = (lp && lp.r!=null && lp.r!=='') ? esc(lp.r) : '회';
   const phRir = (lp && lp.rir!=null && lp.rir!=='') ? esc(lp.rir) : '0~5';
+  const phNote = (lp && lp.note) ? esc(lp.note) : '예: 왼어깨 뻐근 / 폼 큐';
   return `<div class="ex">
     <div class="ex-top">
       <span class="ex-num">${String(num||i+1).padStart(2,'0')}</span>
@@ -736,10 +719,11 @@ function exCard(k,ex,i,num){
       <label>무게 <input data-id="${id}" data-f="w" inputmode="decimal" placeholder="${phW}" value="${esc(rec.w||'')}"></label>
       <label>반복 <input data-id="${id}" data-f="r" inputmode="numeric" placeholder="${phR}" value="${esc(rec.r||'')}"></label>
       <label>RIR <input data-id="${id}" data-f="rir" inputmode="numeric" placeholder="${phRir}" value="${esc(rec.rir||'')}"></label>
+      <button class="upflag${rec.up?' on':''}" data-id="${id}" type="button" aria-pressed="${rec.up?'true':'false'}" aria-label="${esc(ex.n)} 다음에 증량 가능 표시" title="전 세트 완수 — 다음에 증량 가능">▲</button>
       <div class="e1rm${e1?'':' hide'}" data-e="${id}" aria-live="polite">e1RM <b>${e1?e1+'kg':'—'}</b><span class="best">${best?' · 최고 '+best:''}</span></div>
     </div>
     <div class="log" style="border-top:0;padding-top:0;margin-top:6px">
-      <label style="flex:1">메모 <input class="note" data-id="${id}" data-f="note" placeholder="예: 왼어깨 뻐근 / 폼 큐" value="${esc(rec.note||'')}"></label>
+      <label style="flex:1">메모 <input class="note" data-id="${id}" data-f="note" placeholder="${phNote}" value="${esc(rec.note||'')}"></label>
       <button class="entryclear" data-id="${id}" type="button" title="이 종목 오늘 기록 지우기">✕ 지우기</button>
     </div></div>`;
 }
@@ -904,12 +888,14 @@ function build(){
     if(fi){ const id=fi.dataset.fold, box=document.getElementById('fold-'+id), open=fi.getAttribute('aria-expanded')==='true';
       if(box) box.hidden=open; fi.setAttribute('aria-expanded', String(!open)); return; }
     const rb=e.target.closest('[data-rest]');
-    if(rb){ const sec=parseInt(rb.dataset.rest,10)||90; tSet(sec); const fp=$('#fpanel'); if(fp) fp.classList.add('open'); tToggle(); return; }
+    if(rb){ const sec=parseInt(rb.dataset.rest,10)||90; tSet(sec); tToggle(); return; }
     const ec=e.target.closest('.entryclear');
     if(ec){ const id=ec.dataset.id; if(!confirm('이 종목의 오늘 기록을 지울까요?')) return;
       const card=ec.closest('.ex');
       if(card){ card.querySelectorAll('.log input').forEach(inp=>inp.value=''); const box=card.querySelector('.e1rm'); if(box){ box.querySelector('b').textContent='—'; box.classList.add('hide'); } }
       clearEntry(id); return; }
+    const uf=e.target.closest('.upflag');
+    if(uf){ const id=uf.dataset.id; const rec=(store[id]=store[id]||{}); rec.up=!rec.up; uf.classList.toggle('on',!!rec.up); uf.setAttribute('aria-pressed', String(!!rec.up)); queueEntry(id); return; }
     const c=e.target.closest('.cond [data-c]');
     if(c){ const v=parseInt(c.dataset.c,10); sessionMeta.condition = (sessionMeta.condition===v?null:v); queueMeta({condition:sessionMeta.condition},'cond'); render(); return; }
     const dl=e.target.closest('#sDeload');
@@ -934,27 +920,21 @@ function render(){
 }
 
 /* ---------- 휴식 타이머 (벽시계 기반) ---------- */
-let tDur=90, tLeft=90, tRun=false, tInt=null, tEnd=0, setCount=0, ac=null;
+let tDur=90, tLeft=90, tRun=false, tInt=null, tEnd=0, ac=null;
 function fmt(s){ const m=Math.floor(s/60), x=s%60; return m+':'+String(x).padStart(2,'0'); }
-function tRender(){ const el=$('#fpTime'); if(!el) return; el.textContent=fmt(Math.max(0,tLeft)); el.classList.toggle('done', tLeft<=0 && tRun===false && tDur>0 && tEndedOnce); }
+function tRender(){ const el=$('#rTime'); if(!el) return; el.textContent=fmt(Math.max(0,tLeft)); el.classList.toggle('done', tLeft<=0 && tRun===false && tDur>0 && tEndedOnce); }
 let tEndedOnce=false;
 function beep(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(),g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.value=880; g.gain.value=0.001; o.start(); g.gain.exponentialRampToValueAtTime(0.3, ac.currentTime+0.02); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+0.5); o.stop(ac.currentTime+0.52); }catch(e){} }
-function tStop(){ tRun=false; clearInterval(tInt); tInt=null; const b=$('#fpToggle'); if(b) b.textContent='시작'; }
+function tStop(){ tRun=false; clearInterval(tInt); tInt=null; const b=$('#rToggle'); if(b) b.textContent='시작'; }
 function tSet(s){ tStop(); tDur=s; tLeft=s; tEndedOnce=false; tRender(); }
 function tTick(){ tLeft=Math.max(0, Math.round((tEnd-Date.now())/1000)); tRender(); if(tLeft<=0){ tStop(); tEndedOnce=true; tRender(); beep(); if(navigator.vibrate) navigator.vibrate([200,100,200]); } }
-function tToggle(){ if(tRun){ tStop(); } else { if(tLeft<=0) tLeft=tDur; tEnd=Date.now()+tLeft*1000; tRun=true; tEndedOnce=false; $('#fpToggle').textContent='일시정지'; clearInterval(tInt); tInt=setInterval(tTick,250); tRender(); } }
+function tToggle(){ if(tRun){ tStop(); } else { if(tLeft<=0) tLeft=tDur; tEnd=Date.now()+tLeft*1000; tRun=true; tEndedOnce=false; const b=$('#rToggle'); if(b) b.textContent='일시정지'; clearInterval(tInt); tInt=setInterval(tTick,250); tRender(); } }
 function tAdj(d){ tDur=Math.max(0,tDur+d); tLeft=Math.max(0,tLeft+d); if(tRun) tEnd=Date.now()+tLeft*1000; tRender(); }
-function setRender(){ const el=$('#setN'); if(el) el.textContent=setCount; }
 function initTools(){
-  $('#fab').addEventListener('click',()=>$('#fpanel').classList.toggle('open'));
-  document.querySelectorAll('#fpanel [data-set]').forEach(b=>b.addEventListener('click',()=>tSet(parseInt(b.dataset.set,10))));
-  document.querySelectorAll('#fpanel [data-adj]').forEach(b=>b.addEventListener('click',()=>tAdj(parseInt(b.dataset.adj,10))));
-  $('#fpToggle').addEventListener('click',tToggle);
-  $('#fpReset').addEventListener('click',()=>tSet(tDur));
-  $('#setMinus').addEventListener('click',()=>{ setCount=Math.max(0,setCount-1); setRender(); });
-  $('#setPlus').addEventListener('click',()=>{ setCount++; setRender(); });
+  document.querySelectorAll('#rbar [data-adj]').forEach(b=>b.addEventListener('click',()=>tAdj(parseInt(b.dataset.adj,10))));
+  $('#rToggle').addEventListener('click',tToggle);
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden && tRun) tTick(); });
-  tRender(); setRender();
+  tRender();
 }
 
 boot();
