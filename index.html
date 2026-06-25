@@ -526,8 +526,12 @@ async function loadBest(){
     const prior=docs.filter(d=>d.date && d.date < date).sort((a,b)=> a.date<b.date?1:(a.date>b.date?-1:0));
     const lm={};
     for(const d of prior){ const blk=(d.week_block==='H')?'H':'S'; const ents=normalizeEntries(d.entries, dayType);
-      for(const k in ents){ const e=ents[k]; if(!e||!(e.w||e.r||e.rir||e.note)) continue;
-        if(!lm[k]) lm[k]={}; if(!lm[k][blk]) lm[k][blk]={ w:e.w, r:e.r, rir:e.rir, note:e.note, date:d.date }; } }
+      for(const k in ents){ const e=ents[k]; if(!e) continue; const hasLog=(e.w||e.r||e.rir||e.note);
+        if(!hasLog && e.up==null) continue;                          /* 로그도 up도 없으면 skip(빈 슬롯 방지) */
+        if(!lm[k]) lm[k]={}; if(!lm[k][blk]) lm[k][blk]={};
+        const s=lm[k][blk];
+        if(s.up==null && e.up!=null) s.up=e.up?1:0;                  /* 같은 블록 가장 최근 up → 이월 */
+        if(s.w==null && hasLog){ s.w=e.w; s.r=e.r; s.rir=e.rir; s.note=e.note; s.date=d.date; } } } /* 가장 최근 로그값 → placeholder */
     lastMap=lm;
   }catch(e){}
 }
@@ -549,7 +553,7 @@ async function flushEntry(key){
   if(!db || !USER) return;
   const e=entryTimers[key]; const d=e?e.d:date, dt=e?e.dt:dayType; delete entryTimers[key];
   const o=store[key]||{};
-  const entry={ w:(o.w||''), r:(o.r||''), rir:(o.rir||''), up:(o.up?1:0), note:(o.note||'').slice(0,500), name:(o.name||'').slice(0,120) };
+  const entry={ w:(o.w||''), r:(o.r||''), rir:(o.rir||''), up:effUp(key), note:(o.note||'').slice(0,500), name:(o.name||'').slice(0,120) };
   const payload={ date:d, dayType:dt, week_block:week, level_mode:level, updatedAt:Date.now(), entries:{ [key]: entry } };
   try{
     const p=setDoc(sref(d, dt), payload, {merge:true});
@@ -679,8 +683,10 @@ function sessionPanel(){
       <span class="dl"><button id="sDeload" class="${m.is_deload?'on':''}">${m.is_deload?'✓ 디로드 주':'디로드 주'}</button></span>
     </div></div>`;
 }
+/* ▲ 증량 플래그 유효상태: 오늘 명시값(토글·저장됨) 우선, 없으면 같은 블록 지난 세션 값 이월(끌 때까지 유지) */
+function effUp(id){ const r=store[id]; if(r && r.up!=null) return r.up?1:0; const l=lastMap[id]; return (l && l[week] && l[week].up) ? 1 : 0; }
 function exCard(k,ex,i,num){
-  const id=ex.id, rec=store[id]||{}, best=bestMap[id]||0, e1=e1rm(rec.w,rec.r);
+  const id=ex.id, rec=store[id]||{}, best=bestMap[id]||0, e1=e1rm(rec.w,rec.r), upOn=effUp(id);
   const _t=exTier(k,i);
   const restBadge = _t==='main' ? `<button class="chip act" type="button" data-rest="${restMainSec()}">⏱ ${restMainSec()}s</button>`
                   : _t==='solo' ? `<button class="chip act" type="button" data-rest="${soloRestSec()}">⏱ ${soloRestSec()}s</button>` : '';
@@ -707,7 +713,7 @@ function exCard(k,ex,i,num){
       ${foldBtn}
     </div>
     ${fold}
-    <div class="ex-rxline"><div class="ex-rx">${rx(ex)}</div><button class="upflag${rec.up?' on':''}" data-id="${id}" type="button" aria-pressed="${rec.up?'true':'false'}" aria-label="${esc(ex.n)} 다음에 증량 가능 표시" title="전 세트 완수 — 다음에 증량 가능">▲</button></div>
+    <div class="ex-rxline"><div class="ex-rx">${rx(ex)}</div><button class="upflag${upOn?' on':''}" data-id="${id}" type="button" aria-pressed="${upOn?'true':'false'}" aria-label="${esc(ex.n)} 다음에 증량 가능 표시" title="전 세트 완수 — 다음에 증량 가능(끌 때까지 유지)">▲</button></div>
     <div class="ex-meta">
       ${ex.tempo?`<span class="chip info">${/[0-9]/.test(ex.tempo)?'템포 '+ex.tempo:ex.tempo}</span>`:''}
       ${restBadge}
@@ -890,7 +896,7 @@ function build(){
       if(card){ card.querySelectorAll('.log input').forEach(inp=>inp.value=''); const box=card.querySelector('.e1rm'); if(box){ box.querySelector('b').textContent='—'; } }
       clearEntry(id); return; }
     const uf=e.target.closest('.upflag');
-    if(uf){ const id=uf.dataset.id; const rec=(store[id]=store[id]||{}); rec.up=!rec.up; uf.classList.toggle('on',!!rec.up); uf.setAttribute('aria-pressed', String(!!rec.up)); queueEntry(id); return; }
+    if(uf){ const id=uf.dataset.id; const nv=effUp(id)?0:1; (store[id]=store[id]||{}).up=nv; uf.classList.toggle('on',!!nv); uf.setAttribute('aria-pressed', String(!!nv)); queueEntry(id); return; }
     const c=e.target.closest('.cond [data-c]');
     if(c){ const v=parseInt(c.dataset.c,10); sessionMeta.condition = (sessionMeta.condition===v?null:v); queueMeta({condition:sessionMeta.condition},'cond'); render(); return; }
     const dl=e.target.closest('#sDeload');
